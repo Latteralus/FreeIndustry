@@ -13,9 +13,9 @@
 1. Work on **one numbered step at a time**, in order. Give the agent the step and the full technical specification. An agent may implement supporting prerequisites but must not silently skip or claim later steps.
 2. Before editing, inspect the repository and identify what already exists. Preserve functioning work. If the plan or specification conflicts with existing code, present the conflict and record an approved decision in `docs/DECISIONS.md`.
 3. For each step, implement the production behavior, the UI/IPC integration **where applicable**, persisted state **where applicable**, automated tests, and a hands-on demonstration. Stubbed or disabled future functionality must be clearly identified; it cannot masquerade as a working feature.
-4. A step is not complete until its **Acceptance gate** passes. Run the relevant commands, record actual results, and check off that step's gate. Never invent test results or mark unimplemented work complete.
+4. A step is not complete until its **Acceptance gate** passes. Run the relevant commands and record the actual results in the step's **Gate verification** note and in `docs/TEST_SCENARIOS.md`. When every build task is implemented and every required check passes — typecheck, lint, format check, the unit/property/integration/scenario tests, `check:deps`, and the real-app E2E and packaging checks the gate calls for — the agent ticks the build tasks and **Step accepted** itself; no separate owner sign-off is needed. If any required check fails, was not run, or depends on work that does not exist yet, leave **Step accepted** unticked and state why. Never invent test results or mark unimplemented work complete. (Step 37 is the exception: its gate is the owner's own sign-off.)
 5. Keep project reference files current: `docs/TechnicalDocument.md`, `docs/DECISIONS.md`, `docs/original-reference-ledger.md`, `docs/TEST_SCENARIOS.md`, and `docs/plan.md`. Add architecture decision records when the design changes materially.
-6. Present a concise handoff after each step: files changed, meaningful behaviors, tests run/pass/fail, remaining limitations, and the exact next step. Stop for project-owner review rather than autonomously implementing the next numbered step.
+6. Present a concise handoff after each step: files changed, meaningful behaviors, tests run/pass/fail, remaining limitations, and the exact next step. Stop after the step rather than autonomously implementing the next numbered step; the owner decides when to start it and can reopen an accepted step at any time.
 7. If a step becomes too large for one agent assignment, split it into `Step NN.a`, `Step NN.b`, etc., **without relaxing its final acceptance gate**. Keep dependencies explicit.
 
 ### Rules that apply to every step
@@ -55,7 +55,7 @@ Run only commands supported by the current repository. If a command is missing, 
 
 ## Step 01 — Establish the repository, standards, and tooling
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
@@ -67,87 +67,132 @@ Run only commands supported by the current repository. If a command is missing, 
 
 **Acceptance gate:** A clean checkout installs, typechecks, lints, formats, executes a sample Jest test, builds, and runs a sample Electron shell. Document any host-specific packaging preconditions. Do not treat dependency installation alone as completion.
 
-**Gate verification (2026-11-07, Windows 11, Node 22.14.0):** passed in a fresh `git clone` of the Step 01 tree: `npm ci`, `npm run check` (typecheck, lint, format check, Jest 20/20), `npm run check:deps`, `npm run test:e2e` (build + 3/3 real-app Playwright tests) and `electron-builder --dir` all succeeded. Host preconditions are in `docs/TEST_SCENARIOS.md`. The CI workflow exists but has not run on GitHub yet (nothing pushed). Re-verified the same way after the toolchain upgrade to TypeScript 7, ESLint 10, Node 24.22.1 and npm 12.2.2 (DECISIONS ADR-0011). Awaiting owner review before ticking **Step accepted**.
+**Gate verification (2026-11-07, Windows 11, Node 22.14.0):** passed in a fresh `git clone` of the Step 01 tree: `npm ci`, `npm run check` (typecheck, lint, format check, Jest 20/20), `npm run check:deps`, `npm run test:e2e` (build + 3/3 real-app Playwright tests) and `electron-builder --dir` all succeeded. Host preconditions are in `docs/TEST_SCENARIOS.md`. The CI workflow exists but has not run on GitHub yet (nothing pushed). Re-verified the same way after the toolchain upgrade to TypeScript 7, ESLint 10, Node 24.22.1 and npm 12.2.2 (DECISIONS ADR-0011). Gate passed; **Step accepted** ticked.
 
 ## Step 02 — Secure Electron application and typed IPC
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Create main, preload, renderer, and simulation-worker entry points; display a local app window without remote content.
-- [ ] Apply context isolation, disabled renderer Node integration, restricted CSP, safe window handling, and a narrow `contextBridge` API.
-- [ ] Define typed, Zod-validated request/response/error schemas; attach command IDs and world revisions; reject malformed, unauthorized, duplicated, and stale requests.
-- [ ] Implement worker lifecycle, graceful stop, error reporting, and structured local logs. No database handles or arbitrary file paths reach the renderer.
+- [x] Create main, preload, renderer, and simulation-worker entry points; display a local app window without remote content.
+- [x] Apply context isolation, disabled renderer Node integration, restricted CSP, safe window handling, and a narrow `contextBridge` API.
+- [x] Define typed, Zod-validated request/response/error schemas; attach command IDs and world revisions; reject malformed, unauthorized, duplicated, and stale requests.
+- [x] Implement worker lifecycle, graceful stop, error reporting, and structured local logs. No database handles or arbitrary file paths reach the renderer.
 
 **Acceptance gate:** The app launches and React communicates with a worker through validated IPC. Security settings are asserted in tests; invalid requests do not mutate state; worker failure produces a recoverable error rather than silent data loss.
 
+**Gate verification (2026-11-07, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy: `npm run check` (Jest 9 suites / 140 tests, including fast-check properties that arbitrary input never mutates worker state or reaches the worker), `npm run check:deps`, `npm run test:e2e` (13/13 real-app tests: React ↔ worker round trip, ten kinds of invalid request rejected with an unchanged snapshot, worker death → explicit `WORKER_UNAVAILABLE` → alert → player-initiated restart), and the packaged `FreeIndustry.exe` (worker loads from `app.asar`; fault injection refused). Design in DECISIONS ADR-0012 – ADR-0017; the only commands are clearly labelled IPC diagnostics (ADR-0016) because the simulation kernel is Step 03. Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
+
 ## Step 03 — Deterministic simulation kernel
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Create pure domain types, entity IDs, world state, command handlers, domain events, and revision checks.
-- [ ] Implement a seeded RNG, stable event ordering, discrete simulation clock, priority queue, pause/resume, stepped advance, and adjustable simulation speed.
-- [ ] Separate high-frequency physical work from lower-frequency economic/manager decisions; no calculations depend on FPS, wall-clock jitter, or React renders.
-- [ ] Add command/event journal, deterministic state fingerprints, and a headless scenario runner.
+- [x] Create pure domain types, entity IDs, world state, command handlers, domain events, and revision checks.
+- [x] Implement a seeded RNG, stable event ordering, discrete simulation clock, priority queue, pause/resume, stepped advance, and adjustable simulation speed.
+- [x] Separate high-frequency physical work from lower-frequency economic/manager decisions; no calculations depend on FPS, wall-clock jitter, or React renders.
+- [x] Add command/event journal, deterministic state fingerprints, and a headless scenario runner.
 
 **Acceptance gate:** Identical seed + starting state + ordered commands yields the same hashes. Different frame rates and pause/speed patterns yield identical domain outcomes. Unit tests run without Electron or PixiJS.
 
+**Gate verification (2026-11-07, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` passed: Jest 18 suites / 284 tests, all in Node or jsdom, with a test asserting that Electron and PixiJS are never loaded. The gate is covered three ways:
+
+- `tests/properties/determinism.test.ts`, 100 random command scripts × seeds × pacings each: chunk sizes stand in for frame rates and speeds, event budgets for an overloaded machine. Pacing never changes the state or journal hash; journal replay and checkpoint/restore at any moment reproduce both.
+- `tests/scenarios/s10-time-determinism.test.ts`: a busy simulated week gives the same hashes headless, at 20×/100×/600× with 7–50 ms ticks, under jitter, and at 1× over a day. Two "players" driving the real pacer with different speeds, tick rates and pauses stop at the same controlled event and end the week identical.
+- `npm run test:e2e`, 16/16 real-app tests: two app launches with the same seed and different pause/speed patterns end the day with identical fingerprints, and another seed differs.
+
+`npm run check:deps` passed. The packaged `FreeIndustry.exe` was smoke-tested: the clock advances and the scheduled event fires; the seed override and fault injection are ignored. Design is in DECISIONS ADR-0019 – ADR-0024. The busy world in these tests is a test fixture: FreeIndustry has no business rules until Step 05, so production commands are still labelled diagnostics. Save/resume (the other half of T-TIME-01) is Step 04. Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
+
 ## Step 04 — SQLite persistence, migrations, and recoverable saves
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Define migration framework, foreign keys, transaction discipline, stable IDs, metadata/content versions, and database integrity checks.
-- [ ] Persist world configuration, entities, commands/events, RNG state, event queue, audit history, and per-save workspace settings.
-- [ ] Implement save slots, atomic checkpoints, load, backup/export/import, and schema-upgrade tests. Keep authoritative SQLite access on the privileged side of IPC.
-- [ ] Establish a snapshot-plus-event-log policy, durability/recovery behavior, and prevention of concurrent-write corruption.
+- [x] Define migration framework, foreign keys, transaction discipline, stable IDs, metadata/content versions, and database integrity checks.
+- [x] Persist world configuration, entities, commands/events, RNG state, event queue, audit history, and per-save workspace settings.
+- [x] Implement save slots, atomic checkpoints, load, backup/export/import, and schema-upgrade tests. Keep authoritative SQLite access on the privileged side of IPC.
+- [x] Establish a snapshot-plus-event-log policy, durability/recovery behavior, and prevention of concurrent-write corruption.
 
 **Acceptance gate:** Save during a pending event, shut down, reopen, and resume with the same domain hash as an uninterrupted run. Failed writes roll back cleanly; old fixture saves migrate or fail with a clear compatibility message.
 
+**Gate verification (2026-11-07, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (Jest 27 suites / 394 tests) and `npm run check:deps` passed. The gate is covered as follows:
+
+- **Save during a pending event, shut down, reopen, same hashes.** `tests/scenarios/s08-save-resume.test.ts` uses the worker's real code on real SQLite files: it saves at 01:00 with two probes pending, starts a new host with another seed, loads, and resumes to the end of the day. The result is compared with an uninterrupted run (both hashes, diagnostics, journal counts; every pending event fires exactly once). It also covers a save between pacer ticks while running, and a 30-run property over random seeds, scripts and save points. `tests/integration/worker-thread.test.ts` does the same across real worker threads, and `npm run test:e2e` (19/19) across three real app launches: save through the UI, quit, relaunch on the same profile, load, run to end of day, and compare with a separate uninterrupted session.
+- **Failed writes roll back cleanly.** A write failing mid-transaction leaves the previous world intact (`world-repository.test.ts`). A failed or unverifiable save leaves the previous file byte-identical with no temporary file, a failed first write creates nothing, and a failed format upgrade leaves the original byte-identical (`save-store.test.ts`). A failed load leaves the running world untouched (`save-coordinator.test.ts`).
+- **Old fixture saves migrate or fail clearly.** The committed `tests/fixtures/saves/format-1-pending-probes.fisave` loads and continues to locked fingerprints, upgrades through a later (test) migration with a backup, and is refused with a plain explanation under other rules. Newer formats, other simulations, other RNGs, other content, non-saves, tampered schemas and damaged bytes are each refused with a specific message.
+
+The packaged `FreeIndustry.exe` was smoke-tested: native SQLite saves, loads with an identical fingerprint, exports, autosaves on exit and keeps saves in the per-user `%APPDATA%\FreeIndustry\saves`. Design is in DECISIONS ADR-0025 – ADR-0029. Only save format 1 exists, so the migration path is proven with test-only migrations; the fixture test forces the first real format or rules change to handle old saves. The domain state is still the Step 03 diagnostics; full S08 (truck, machine, contract) is Step 34. Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
+
 ## Step 05 — Company identity, cash accounting, and initial capital
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Model company identity, president/owner, starting settings, accounts, opening balances, and a chart of accounts.
-- [ ] Build balanced double-entry postings with integer cents, immutable audit records, cash/credit validation, and transaction references.
-- [ ] Support basic payments, charges, rent/deposit obligations, invoices, and receivables/payables as domain events; postpone advanced banking to its dedicated step.
-- [ ] Implement an internal account inspection read model to validate journal state before introducing polished reports.
+- [x] Model company identity, president/owner, starting settings, accounts, opening balances, and a chart of accounts.
+- [x] Build balanced double-entry postings with integer cents, immutable audit records, cash/credit validation, and transaction references.
+- [x] Support basic payments, charges, rent/deposit obligations, invoices, and receivables/payables as domain events; postpone advanced banking to its dedicated step.
+- [x] Implement an internal account inspection read model to validate journal state before introducing polished reports.
 
 **Acceptance gate:** All postings balance; transactions are idempotent; insolvency/insufficient-funds handling is explicit; opening company funds and expenses survive save/load without unexplained adjustments.
+
+**Gate verification (2026-11-08, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (Jest 36 suites / 495 tests), `npm run check:deps`, `npm run test:e2e` (20/20) and `electron-builder --dir` passed. The gate is covered as follows:
+
+- **All postings balance.** The ledger refuses unbalanced or malformed entries, and on every restore the invariants re-derive every balance and reconcile payables and receivables with the open invoices (`ledger.test.ts`, `company.test.ts`). Saves are checked again in SQL: every entry balances, every balance equals its postings (`company-books.test.ts`). `tests/properties/accounting.test.ts` checks all of this after every step of 150 random scripts.
+- **Transactions are idempotent.** Each business event posts once (a unique source key per entry). A resubmitted command is answered from the journal, even after a reload, and posts nothing. A second click against an old revision is stale, not a second payment (`finance-rules.test.ts`, `s05-company-books.test.ts`).
+- **Insolvency and insufficient funds are explicit.** A payment beyond the funds is refused with the amounts and changes nothing. A bill the funds cannot cover becomes overdue with a journal fact, a notable stop and a reported shortfall. Cash is never overdrawn (`finance-rules.test.ts`, `s05`, and `company.spec.ts` in the real app). Default consequences are Step 25.
+- **Funds and expenses survive save/load with no unexplained adjustment.** An invariant requires cash to equal the opening capital plus or minus exactly the recorded payments. `s05` saves at day 20, reloads in a new worker and matches an uninterrupted run; it also rebuilds a crashed session from the recovery log. `company.spec.ts` founds, bills, pays, saves, quits, relaunches and loads in the real app with identical books. A tampered save whose capital was altered consistently in every table is still refused. The packaged `FreeIndustry.exe` saved and reloaded a company identically.
+
+Design is in DECISIONS ADR-0030 – ADR-0034. Save format 2 adds the books; the rules version is unchanged, and the Step 04 fixture save upgrades with a backup and still reaches its locked fingerprints. A new format 2 fixture locks a company mid-play. Rent and deposit obligations come only from a labelled development command until leases exist (Step 07). Receivables are implemented in the domain but nothing raises one until sales (Step 16). Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
 
 # Phase B — Authentic desktop and city/factory space
 
 ## Step 06 — Classic movable-window management desktop
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Construct a restrained 1990s-style menu, toolbar, status bar, and persistent main workspace with a factory viewport background.
-- [ ] Implement independent draggable/resizable/overlapping windows with focus/stack order, minimize/maximize, close/reopen, tiling/cascade, keyboard affordances, and sensible minimum sizes.
-- [ ] Create reusable compact table, tab, dialog, inspector, dropdown, and error/notification components; keep UI scale configurable.
-- [ ] Persist window bounds, tabs, z-order, and filters per save/profile. Keep every command connected through typed IPC.
+- [x] Construct a restrained 1990s-style menu, toolbar, status bar, and persistent main workspace with a factory viewport background.
+- [x] Implement independent draggable/resizable/overlapping windows with focus/stack order, minimize/maximize, close/reopen, tiling/cascade, keyboard affordances, and sensible minimum sizes.
+- [x] Create reusable compact table, tab, dialog, inspector, dropdown, and error/notification components; keep UI scale configurable.
+- [x] Persist window bounds, tabs, z-order, and filters per save/profile. Keep every command connected through typed IPC.
 
 **Acceptance gate:** Several management windows remain interactive while the factory viewport is visible; moving windows cannot affect simulation outcomes. Closing/reopening and loading restores their layout. No fake production UI is represented as functional.
 
+**Gate verification (2026-11-08, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (Jest 40 suites / 553 tests), `npm run check:deps`, `npm run test:e2e` (24/24) and `electron-builder --dir` passed. The gate is covered as follows:
+
+- **Several windows stay interactive while the factory viewport is visible.** `tests/e2e/desktop.spec.ts` opens Company, Accounts, Bills and Obligations, Saved Games and Diagnostics together over the viewport (an uncovered point of the workspace is the viewport), and uses each while the others stay open: a tab, two filters, a probe command, live cash. Title-bar drags and corner resizes move by exactly the pointer's distance, at 100 % and 125 % UI scale; minimum sizes hold; minimize, maximize, restore, tile and cascade work; the keyboard reaches the menubar, the shortcuts and each window's Move/Size. `App.test.tsx` and `components.test.tsx` cover the same in jsdom.
+- **Moving windows cannot affect simulation outcomes.** The layout is a workspace setting outside every fingerprint and the journal (ADR-0028, ADR-0035). In the real app, two sessions with the same seed and commands, one with heavy window use while running at Fastest, end the day with identical fingerprints, journal, diagnostics and books; window activity adds no command and leaves a saved world unchanged. `App.test.tsx` proves no window action sends a command or clock request.
+- **Closing/reopening and loading restore the layout.** A closed window reopens with the same bounds and tab (property-tested in `window-model.test.ts`, and in the real app); after Close All, Reset Layout and new arrangements, loading the save restores bounds, stacking, state, tabs and filters exactly; a relaunch on the same profile restores the last layout and UI scale. Layouts from saves are validated as untrusted input (`layout-codec.test.ts`).
+- **No fake production UI is represented as functional.** The spec's fifteen menus and nine toolbar buttons are present; every command for a system that does not exist yet is disabled with "Not built yet: …" and cannot be chosen; `menus.test.ts` checks that every enabled command does something. The factory viewport says "No facility" instead of drawing a factory.
+
+The packaged `FreeIndustry.exe` was smoke-tested: no Electron menu, windows, minimize, cascade and UI scale work, the layout is stored with the world, the state hash is unchanged and no CSP violation occurs. Design is in DECISIONS ADR-0035 – ADR-0036. Windows exist only for systems that exist (personnel, market, contracts and the machine catalog arrive with their steps); the inbox (ledger OR-56) is scheduled at Steps 22 and 30. Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
+
 ## Step 07 — World creation, cities, and industrial cityscape
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Implement **New Company**, **Quick Start**, **Load**, **Scenarios**, **Options**, **Help**, **Exit**.
-- [ ] Create data-driven cities/districts with rents, labor availability, transport access, buyers, suppliers, and rival-business starting conditions.
-- [ ] Render a selectable, old-school industrial cityscape with individual buildings, occupied/vacant properties, tooltips, and property inspection.
-- [ ] Support realistic garage, workshop, industrial unit, warehouse, and factory properties with real dimensions, access, price, and tenancy terms. Company starts without machinery, labor, or stock.
+- [x] Implement **New Company**, **Quick Start**, **Load**, **Scenarios**, **Options**, **Help**, **Exit**.
+- [x] Create data-driven cities/districts with rents, labor availability, transport access, buyers, suppliers, and rival-business starting conditions.
+- [x] Render a selectable, old-school industrial cityscape with individual buildings, occupied/vacant properties, tooltips, and property inspection.
+- [x] Support realistic garage, workshop, industrial unit, warehouse, and factory properties with real dimensions, access, price, and tenancy terms. Company starts without machinery, labor, or stock.
 
 **Acceptance gate:** Player can examine different locations, select/lease a real property using available funds, and transition to its initially empty interior. Different properties have genuinely different costs, dimensions, and usable conditions—not just labels.
+
+**Gate verification (2026-11-08, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (now including `check:content`; Jest 50 suites / 626 tests), `npm run check:deps`, `npm run test:e2e` (27/27) and `electron-builder --dir` passed. The gate is covered as follows:
+
+- **Examine different locations.** The main menu's New Company (or Scenarios) starts a new world from a scenario; City Selection compares three data-driven cities (population, labour force, unemployment, prevailing wages, average asking rent computed from the listings, vacancies, the businesses established there) and City View draws each industrial district to scale with every building selectable, a tooltip and a property record (`city-windows.test.tsx`, `App.test.tsx`, `city.spec.ts`). The content is validated by `npm run check:content` and `content.test.ts`.
+- **Select and lease a real property using available funds.** Signing pays the deposit and the first month's rent at once, commits monthly rent through the books and occupies the property; a lease the funds cannot cover is refused with the figures and changes nothing, an occupied property cannot be leased, and founding with premises is all or nothing (`real-estate.test.ts`, `real-estate-rules.test.ts`, the 150-run property test `tests/properties/real-estate.test.ts`). In the real app a factory lease is refused for want of funds with the fingerprint unchanged, then the workshop at 8 Canal Street is leased (cash $30,000 → $28,440).
+- **Transition to its initially empty interior.** The factory viewport draws the leased floor from its outline at a fixed 10 px a metre (80 × 120 px for the 8 × 12 m workshop in the real app), with its doors, labelled empty; nothing but the company and its real estate exists in the world (`s01-empty-garage.test.ts`, S01). Lease, books and floor survive save, quit, relaunch and load with identical fingerprints (`city.spec.ts`, `s01-empty-garage.test.ts`, `real-estate-save.test.ts`).
+- **Genuinely different costs, dimensions and usable conditions.** Floor areas derive from each property's outline (17 m² garages to a 5,400 m² factory hall); rents, deposits, amounts due, power, clear heights, floor loads, doors, services, permitted uses and lease terms differ per listing; on the site plan a 3 m garage is drawn 6 px wide and the 36 m mill 72 px (`content.test.ts`, `new-world.test.ts`, `city.spec.ts`).
+
+Save format 3 adds the real estate; the rules version is unchanged, the format 1 and 2 fixtures upgrade with a backup and reach their locked fingerprints, and a new format 3 fixture locks a leased world. The packaged `FreeIndustry.exe` was smoke-tested: the bundled content loads (3 cities, 41 properties, 3 scenarios), the City View draws, no CSP violation from start-up, and the world was left unchanged (nothing written to the real profile). One defect was found and fixed with a regression test: Zod probed for `eval` at start-up because a shared schema was built at import time before the renderer made Zod jitless. Design is in DECISIONS ADR-0037 – ADR-0042; ADR-0042 (the cityscape is SVG until the PixiJS renderer of Step 09) needs owner review. Limits: one facility at a time (Step 26); no renewal, early termination, purchase or arrears offset against a deposit (Step 25); rivals, suppliers and buyers are named establishments whose trading begins with Steps 14–21. Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
 
 ## Step 08 — Authoritative facility geometry and equipment placement
 
@@ -577,9 +622,9 @@ noncausal market events, or animation-only behaviors.
 
 Implement the code, integration, tests, persistence and documentation
 required by the step. Run the relevant validation commands and report
-the actual results. Do not mark the step complete unless every
-Acceptance gate condition passes. If blocked, state the blocker and
-leave the checkbox incomplete. Record material technical choices in
+the actual results. When every Acceptance gate condition passes,
+tick the build tasks and "Step accepted" yourself; otherwise leave
+"Step accepted" unticked and state the blocker. Record material technical choices in
 docs/DECISIONS.md and original-game fidelity claims in the reference
 ledger. Stop after this step and report the next step number.
 ```

@@ -1,0 +1,696 @@
+{
+  "city": {
+    "id": "cedar-bluff",
+    "name": "Cedar Bluff",
+    "region": "Texas",
+    "population": 310000,
+    "description": "A fast-growing city on the interstate with new buildings, cheap land and the lowest wages, but a less experienced industrial workforce.",
+    "workforce": 151000,
+    "unemploymentPermille": 44,
+    "wageCentsPerHour": {
+      "production": 960,
+      "warehouse": 820,
+      "office": 930,
+      "technical": 1370
+    },
+    "map": [300, 820]
+  },
+  "districts": [
+    {
+      "id": "interstate-park",
+      "name": "Interstate Business Park",
+      "description": "New tilt-wall buildings beside the interstate interchange.",
+      "site": [380, 250],
+      "highwayAccessM": 400,
+      "railSiding": false,
+      "streets": [
+        {
+          "name": "Commerce Parkway",
+          "from": [0, 120],
+          "to": [380, 120],
+          "widthM": 12
+        }
+      ]
+    },
+    {
+      "id": "old-town-yards",
+      "name": "Old Town Yards",
+      "description": "Former railroad yards near the old depot, now cheap garages and workshops.",
+      "site": [380, 250],
+      "highwayAccessM": 2800,
+      "railSiding": true,
+      "streets": [
+        {
+          "name": "Depot Street",
+          "from": [0, 120],
+          "to": [380, 120],
+          "widthM": 12
+        },
+        {
+          "name": "Bowie Street",
+          "from": [180, 0],
+          "to": [180, 250],
+          "widthM": 10
+        }
+      ]
+    }
+  ],
+  "businesses": [
+    {
+      "id": "bluebonnet-packaging",
+      "name": "Bluebonnet Packaging",
+      "role": "supplier",
+      "trade": "Corrugated cartons and wooden pallets"
+    },
+    {
+      "id": "sunbelt-garden-tools",
+      "name": "Sunbelt Garden Tools",
+      "role": "manufacturer",
+      "trade": "Lawn and garden hand tools"
+    },
+    {
+      "id": "alamo-woodcraft",
+      "name": "Alamo Woodcraft",
+      "role": "manufacturer",
+      "trade": "Picture frames and small wooden goods"
+    },
+    {
+      "id": "rio-grande-hardware",
+      "name": "Rio Grande Hardware Supply",
+      "role": "supplier",
+      "trade": "Fasteners, hinges and fittings"
+    },
+    {
+      "id": "lone-star-building",
+      "name": "Lone Star Building Supply",
+      "role": "buyer",
+      "trade": "Building-materials retailer (on the interstate frontage road)"
+    }
+  ],
+  "properties": [
+    {
+      "id": "cb-ibp-100",
+      "district": "interstate-park",
+      "address": "100 Commerce Parkway",
+      "kind": "industrial-unit",
+      "description": "New unit, never occupied.",
+      "site": [12, 83],
+      "floor": [
+        [0, 0],
+        [15000, 0],
+        [15000, 25000],
+        [0, 25000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Interstate Land Partners",
+      "rentCentsPerMonth": 125000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-ibp-104",
+      "district": "interstate-park",
+      "address": "104 Commerce Parkway",
+      "kind": "industrial-unit",
+      "description": "New unit, never occupied.",
+      "site": [37, 83],
+      "floor": [
+        [0, 0],
+        [15000, 0],
+        [15000, 25000],
+        [0, 25000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Interstate Land Partners",
+      "rentCentsPerMonth": 125000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-ibp-110",
+      "district": "interstate-park",
+      "address": "110 Commerce Parkway",
+      "kind": "warehouse",
+      "description": "Cross-dock warehouse with two loading docks.",
+      "site": [62, 48],
+      "floor": [
+        [0, 0],
+        [36000, 0],
+        [36000, 60000],
+        [0, 60000]
+      ],
+      "clearHeightMm": 9500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 19000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Interstate Land Partners",
+      "rentCentsPerMonth": 540000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-ibp-120",
+      "district": "interstate-park",
+      "address": "120 Commerce Parkway",
+      "kind": "warehouse",
+      "description": "Warehouse with a pallet yard.",
+      "site": [12, 132],
+      "floor": [
+        [0, 0],
+        [30000, 0],
+        [30000, 50000],
+        [0, 50000]
+      ],
+      "clearHeightMm": 8500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 16000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Interstate Land Partners",
+      "rentCentsPerMonth": 405000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": "bluebonnet-packaging"
+    },
+    {
+      "id": "cb-ibp-130",
+      "district": "interstate-park",
+      "address": "130 Commerce Parkway",
+      "kind": "factory",
+      "description": "Speculative factory shell with a high clear height.",
+      "site": [52, 132],
+      "floor": [
+        [0, 0],
+        [54000, 0],
+        [54000, 84000],
+        [0, 84000]
+      ],
+      "clearHeightMm": 9000,
+      "floorLoadKgPerM2": 3500,
+      "power": {
+        "kva": 500,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 19666,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 36332,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["general-manufacturing", "light-manufacturing", "assembly", "storage", "offices"],
+      "landlord": "Interstate Land Partners",
+      "rentCentsPerMonth": 1260000,
+      "depositMonths": 3,
+      "termMonths": [24, 120],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-ibp-140",
+      "district": "interstate-park",
+      "address": "140 Commerce Parkway",
+      "kind": "factory",
+      "description": "Tool plant with a forging annex.",
+      "site": [116, 132],
+      "floor": [
+        [0, 0],
+        [45000, 0],
+        [45000, 56000],
+        [36000, 56000],
+        [36000, 70000],
+        [0, 70000]
+      ],
+      "clearHeightMm": 7500,
+      "floorLoadKgPerM2": 3500,
+      "power": {
+        "kva": 400,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 23500,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["general-manufacturing", "light-manufacturing", "assembly", "storage", "offices"],
+      "landlord": "Interstate Land Partners",
+      "rentCentsPerMonth": 950000,
+      "depositMonths": 3,
+      "termMonths": [24, 120],
+      "occupiedBy": "sunbelt-garden-tools"
+    },
+    {
+      "id": "cb-otw-3",
+      "district": "old-town-yards",
+      "address": "3 Depot Street (yard)",
+      "kind": "garage",
+      "description": "Tin-roofed lock-up garage.",
+      "site": [12, 102],
+      "floor": [
+        [0, 0],
+        [3000, 0],
+        [3000, 5500],
+        [0, 5500]
+      ],
+      "clearHeightMm": 2300,
+      "floorLoadKgPerM2": 500,
+      "power": {
+        "kva": 3,
+        "threePhase": false
+      },
+      "water": false,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 300,
+          "widthMm": 2400,
+          "heightMm": 2100
+        },
+        {
+          "kind": "personnel",
+          "edge": 3,
+          "offsetMm": 600,
+          "widthMm": 800,
+          "heightMm": 2000
+        }
+      ],
+      "uses": ["light-manufacturing", "storage"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 7000,
+      "depositMonths": 1,
+      "termMonths": [1, 24],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-otw-5",
+      "district": "old-town-yards",
+      "address": "5 Depot Street (yard)",
+      "kind": "garage",
+      "description": "Tin-roofed lock-up garage.",
+      "site": [25, 102],
+      "floor": [
+        [0, 0],
+        [3000, 0],
+        [3000, 5500],
+        [0, 5500]
+      ],
+      "clearHeightMm": 2300,
+      "floorLoadKgPerM2": 500,
+      "power": {
+        "kva": 3,
+        "threePhase": false
+      },
+      "water": false,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 300,
+          "widthMm": 2400,
+          "heightMm": 2100
+        },
+        {
+          "kind": "personnel",
+          "edge": 3,
+          "offsetMm": 600,
+          "widthMm": 800,
+          "heightMm": 2000
+        }
+      ],
+      "uses": ["light-manufacturing", "storage"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 7000,
+      "depositMonths": 1,
+      "termMonths": [1, 24],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-otw-9",
+      "district": "old-town-yards",
+      "address": "9 Depot Street",
+      "kind": "workshop",
+      "description": "Small workshop in the old wagon shop.",
+      "site": [38, 98],
+      "floor": [
+        [0, 0],
+        [7000, 0],
+        [7000, 10000],
+        [0, 10000]
+      ],
+      "clearHeightMm": 3800,
+      "floorLoadKgPerM2": 1500,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3000
+        }
+      ],
+      "uses": ["light-manufacturing", "assembly", "storage"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 33000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-otw-11",
+      "district": "old-town-yards",
+      "address": "11 Depot Street",
+      "kind": "workshop",
+      "description": "L-shaped workshop in the old wagon shop.",
+      "site": [55, 93],
+      "floor": [
+        [0, 0],
+        [10000, 0],
+        [10000, 9000],
+        [6000, 9000],
+        [6000, 15000],
+        [0, 15000]
+      ],
+      "clearHeightMm": 3800,
+      "floorLoadKgPerM2": 1500,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 4,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        }
+      ],
+      "uses": ["light-manufacturing", "assembly", "storage"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 52000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": "alamo-woodcraft"
+    },
+    {
+      "id": "cb-otw-17",
+      "district": "old-town-yards",
+      "address": "17 Depot Street",
+      "kind": "commercial-unit",
+      "description": "Former freight office with a rear store.",
+      "site": [12, 132],
+      "floor": [
+        [0, 0],
+        [8000, 0],
+        [8000, 12000],
+        [0, 12000]
+      ],
+      "clearHeightMm": 3200,
+      "floorLoadKgPerM2": 750,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 2700,
+          "heightMm": 2700
+        }
+      ],
+      "uses": ["offices", "assembly", "light-manufacturing", "storage"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 38000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-otw-21",
+      "district": "old-town-yards",
+      "address": "21 Depot Street",
+      "kind": "warehouse",
+      "description": "Rail-served goods shed with one loading dock.",
+      "site": [30, 132],
+      "floor": [
+        [0, 0],
+        [24000, 0],
+        [24000, 36000],
+        [0, 36000]
+      ],
+      "clearHeightMm": 6500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 230000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "cb-otw-25",
+      "district": "old-town-yards",
+      "address": "25 Depot Street",
+      "kind": "industrial-unit",
+      "description": "Engine-shed conversion.",
+      "site": [64, 132],
+      "floor": [
+        [0, 0],
+        [14000, 0],
+        [14000, 22000],
+        [0, 22000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Old Town Yards Trust",
+      "rentCentsPerMonth": 120000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": "rio-grande-hardware"
+    }
+  ]
+}

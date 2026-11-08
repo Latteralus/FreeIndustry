@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "id": "standard",
+      "name": "Standard start",
+      "description": "Found a small company with your own savings in any of the three cities. Enough for a garage, a workshop or a small industrial unit. Nothing is provided: no premises, staff, machines or stock.",
+      "epoch": "1996-01-01",
+      "defaultCapitalCents": 5000000,
+      "quickStart": null
+    },
+    {
+      "id": "backed",
+      "name": "Backed start",
+      "description": "Found the company with a large sum from the owner, enough to lease a warehouse or a factory. Everything inside it must still be bought and hired.",
+      "epoch": "1996-01-01",
+      "defaultCapitalCents": 75000000,
+      "quickStart": null
+    },
+    {
+      "id": "quick-start",
+      "name": "Quick Start",
+      "description": "Skip the setup: Harlow Precision Works is founded with $50,000 and leases the workshop at 8 Canal Street, Harlow Falls, for a year. The workshop is empty.",
+      "epoch": "1996-01-01",
+      "defaultCapitalCents": 5000000,
+      "quickStart": {
+        "legalName": "Harlow Precision Works",
+        "presidentName": "Morgan Ellery",
+        "propertyId": "hf-canal-8",
+        "termMonths": 12,
+        "standingOrder": true
+      }
+    }
+  ]
+}

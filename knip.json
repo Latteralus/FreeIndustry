@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/worker/index.ts"],
   "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx,cjs}"],
-  "ignoreDependencies": ["pixi.js", "better-sqlite3", "@types/better-sqlite3", "cross-env"]
+  "ignoreDependencies": ["pixi.js", "cross-env"]
 }

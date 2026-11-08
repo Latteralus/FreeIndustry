@@ -18,13 +18,18 @@ function devServerStyleCsp(): Plugin {
   };
 }
 
-// Main is emitted as ESM ("type": "module"). The preload is forced to CommonJS
-// because Electron's sandboxed preload scripts cannot be ES modules.
+// Main is emitted as ESM ("type": "module"). The simulation worker thread is a
+// second entry of the main build (out/main/worker.js, ADR-0012). The preload is
+// forced to CommonJS because Electron's sandboxed preload scripts cannot be ES
+// modules.
 export default defineConfig({
   main: {
     build: {
       rolldownOptions: {
-        input: { index: resolve(import.meta.dirname, 'src/main/index.ts') },
+        input: {
+          index: resolve(import.meta.dirname, 'src/main/index.ts'),
+          worker: resolve(import.meta.dirname, 'src/worker/index.ts'),
+        },
       },
     },
   },

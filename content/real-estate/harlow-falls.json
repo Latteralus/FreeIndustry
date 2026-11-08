@@ -1,0 +1,811 @@
+{
+  "city": {
+    "id": "harlow-falls",
+    "name": "Harlow Falls",
+    "region": "Ohio",
+    "population": 186000,
+    "description": "An old river and canal town with brick mills, an experienced production workforce and the lowest rents of the three cities.",
+    "workforce": 92000,
+    "unemploymentPermille": 68,
+    "wageCentsPerHour": {
+      "production": 1120,
+      "warehouse": 940,
+      "office": 1010,
+      "technical": 1560
+    },
+    "map": [560, 330]
+  },
+  "districts": [
+    {
+      "id": "canal-street-works",
+      "name": "Canal Street Works",
+      "description": "Brick workshops, lock-up garages and an old mill along the canal, served by a rail siding.",
+      "site": [380, 250],
+      "highwayAccessM": 3200,
+      "railSiding": true,
+      "streets": [
+        {
+          "name": "Canal Street",
+          "from": [0, 120],
+          "to": [380, 120],
+          "widthM": 12
+        },
+        {
+          "name": "Lock Lane",
+          "from": [190, 0],
+          "to": [190, 250],
+          "widthM": 10
+        }
+      ]
+    },
+    {
+      "id": "northgate-park",
+      "name": "Northgate Industrial Park",
+      "description": "Steel-framed units from the 1980s on the north edge of town, close to the highway junction.",
+      "site": [380, 250],
+      "highwayAccessM": 600,
+      "railSiding": false,
+      "streets": [
+        {
+          "name": "Northgate Drive",
+          "from": [0, 120],
+          "to": [380, 120],
+          "widthM": 12
+        }
+      ]
+    }
+  ],
+  "businesses": [
+    {
+      "id": "brennan-sheet-metal",
+      "name": "Brennan Sheet Metal",
+      "role": "manufacturer",
+      "trade": "Sheet-metal brackets and enclosures"
+    },
+    {
+      "id": "canal-timber-board",
+      "name": "Canal Timber & Board",
+      "role": "supplier",
+      "trade": "Sawn lumber, plywood and particle board"
+    },
+    {
+      "id": "ridley-furniture",
+      "name": "Ridley Furniture Co.",
+      "role": "manufacturer",
+      "trade": "Wooden chairs and tables"
+    },
+    {
+      "id": "kestrel-plastics",
+      "name": "Kestrel Plastics",
+      "role": "manufacturer",
+      "trade": "Injection-moulded housings and cases"
+    },
+    {
+      "id": "midstates-hardware",
+      "name": "Midstates Hardware Distributors",
+      "role": "buyer",
+      "trade": "Buys hardware and small tools for retail stores"
+    },
+    {
+      "id": "ohio-valley-coop",
+      "name": "Ohio Valley Hardware Co-op",
+      "role": "buyer",
+      "trade": "Buying office of a cooperative of hardware stores (downtown)"
+    }
+  ],
+  "properties": [
+    {
+      "id": "hf-canal-2",
+      "district": "canal-street-works",
+      "address": "2 Canal Street (rear)",
+      "kind": "garage",
+      "description": "Lock-up garage behind the old chandlery; single-phase supply, no water.",
+      "site": [12, 102],
+      "floor": [
+        [0, 0],
+        [3000, 0],
+        [3000, 5800],
+        [0, 5800]
+      ],
+      "clearHeightMm": 2300,
+      "floorLoadKgPerM2": 500,
+      "power": {
+        "kva": 3,
+        "threePhase": false
+      },
+      "water": false,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 300,
+          "widthMm": 2400,
+          "heightMm": 2100
+        },
+        {
+          "kind": "personnel",
+          "edge": 3,
+          "offsetMm": 600,
+          "widthMm": 800,
+          "heightMm": 2000
+        }
+      ],
+      "uses": ["light-manufacturing", "storage"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 9500,
+      "depositMonths": 1,
+      "termMonths": [1, 24],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-canal-4",
+      "district": "canal-street-works",
+      "address": "4 Canal Street (rear)",
+      "kind": "garage",
+      "description": "Lock-up garage with a concrete floor and a light and socket.",
+      "site": [25, 101],
+      "floor": [
+        [0, 0],
+        [3200, 0],
+        [3200, 6400],
+        [0, 6400]
+      ],
+      "clearHeightMm": 2300,
+      "floorLoadKgPerM2": 500,
+      "power": {
+        "kva": 3,
+        "threePhase": false
+      },
+      "water": false,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 300,
+          "widthMm": 2400,
+          "heightMm": 2100
+        },
+        {
+          "kind": "personnel",
+          "edge": 3,
+          "offsetMm": 600,
+          "widthMm": 800,
+          "heightMm": 2000
+        }
+      ],
+      "uses": ["light-manufacturing", "storage"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 11000,
+      "depositMonths": 1,
+      "termMonths": [1, 24],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-canal-8",
+      "district": "canal-street-works",
+      "address": "8 Canal Street",
+      "kind": "workshop",
+      "description": "Brick workshop with a roller door onto the street and a sink.",
+      "site": [39, 96],
+      "floor": [
+        [0, 0],
+        [8000, 0],
+        [8000, 12000],
+        [0, 12000]
+      ],
+      "clearHeightMm": 3800,
+      "floorLoadKgPerM2": 1500,
+      "power": {
+        "kva": 10,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3000
+        }
+      ],
+      "uses": ["light-manufacturing", "assembly", "storage"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 52000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-canal-12",
+      "district": "canal-street-works",
+      "address": "12 Canal Street",
+      "kind": "workshop",
+      "description": "L-shaped workshop around a yard corner.",
+      "site": [57, 94],
+      "floor": [
+        [0, 0],
+        [12000, 0],
+        [12000, 9000],
+        [8000, 9000],
+        [8000, 14000],
+        [0, 14000]
+      ],
+      "clearHeightMm": 3800,
+      "floorLoadKgPerM2": 1500,
+      "power": {
+        "kva": 25,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 4,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 4,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3000
+        }
+      ],
+      "uses": ["light-manufacturing", "assembly", "storage"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 69000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": "brennan-sheet-metal"
+    },
+    {
+      "id": "hf-canal-20",
+      "district": "canal-street-works",
+      "address": "20 Canal Street",
+      "kind": "industrial-unit",
+      "description": "Former boiler works: a tall single bay with three-phase power and gas.",
+      "site": [79, 84],
+      "floor": [
+        [0, 0],
+        [15000, 0],
+        [15000, 24000],
+        [0, 24000]
+      ],
+      "clearHeightMm": 5500,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 60,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 145000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-canal-31",
+      "district": "canal-street-works",
+      "address": "31 Canal Street",
+      "kind": "commercial-unit",
+      "description": "Ground-floor trade counter and store.",
+      "site": [12, 132],
+      "floor": [
+        [0, 0],
+        [10000, 0],
+        [10000, 9000],
+        [0, 9000]
+      ],
+      "clearHeightMm": 3200,
+      "floorLoadKgPerM2": 750,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 2700,
+          "heightMm": 2700
+        }
+      ],
+      "uses": ["offices", "assembly", "light-manufacturing", "storage"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 43000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": "canal-timber-board"
+    },
+    {
+      "id": "hf-canal-33",
+      "district": "canal-street-works",
+      "address": "33 Canal Street",
+      "kind": "warehouse",
+      "description": "Rail-side goods shed with a loading dock.",
+      "site": [32, 132],
+      "floor": [
+        [0, 0],
+        [24000, 0],
+        [24000, 40000],
+        [0, 40000]
+      ],
+      "clearHeightMm": 7000,
+      "floorLoadKgPerM2": 5000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 295000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-canal-41",
+      "district": "canal-street-works",
+      "address": "41 Canal Street",
+      "kind": "factory",
+      "description": "The former Ridley Mill: a long three-storey-high weaving shed.",
+      "site": [66, 132],
+      "floor": [
+        [0, 0],
+        [36000, 0],
+        [36000, 60000],
+        [0, 60000]
+      ],
+      "clearHeightMm": 6500,
+      "floorLoadKgPerM2": 3500,
+      "power": {
+        "kva": 300,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 19000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["general-manufacturing", "light-manufacturing", "assembly", "storage", "offices"],
+      "landlord": "Canal Properties Ltd",
+      "rentCentsPerMonth": 560000,
+      "depositMonths": 3,
+      "termMonths": [24, 120],
+      "occupiedBy": "ridley-furniture"
+    },
+    {
+      "id": "hf-ng-1",
+      "district": "northgate-park",
+      "address": "Unit 1, Northgate Drive",
+      "kind": "industrial-unit",
+      "description": "End-of-terrace unit with a single roller door.",
+      "site": [12, 88],
+      "floor": [
+        [0, 0],
+        [12000, 0],
+        [12000, 20000],
+        [0, 20000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 115000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-ng-2",
+      "district": "northgate-park",
+      "address": "Unit 2, Northgate Drive",
+      "kind": "industrial-unit",
+      "description": "Mid-terrace unit with a single roller door.",
+      "site": [34, 88],
+      "floor": [
+        [0, 0],
+        [12000, 0],
+        [12000, 20000],
+        [0, 20000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 115000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": "kestrel-plastics"
+    },
+    {
+      "id": "hf-ng-3",
+      "district": "northgate-park",
+      "address": "Unit 3, Northgate Drive",
+      "kind": "industrial-unit",
+      "description": "Larger unit with two roller doors and a small office mezzanine (not usable floor).",
+      "site": [56, 78],
+      "floor": [
+        [0, 0],
+        [18000, 0],
+        [18000, 30000],
+        [0, 30000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 100,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 10000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 215000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-ng-5",
+      "district": "northgate-park",
+      "address": "5 Northgate Drive",
+      "kind": "warehouse",
+      "description": "Distribution warehouse with two loading docks.",
+      "site": [84, 58],
+      "floor": [
+        [0, 0],
+        [30000, 0],
+        [30000, 50000],
+        [0, 50000]
+      ],
+      "clearHeightMm": 8500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 16000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 440000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-ng-7",
+      "district": "northgate-park",
+      "address": "7 Northgate Drive",
+      "kind": "warehouse",
+      "description": "Large distribution warehouse.",
+      "site": [12, 132],
+      "floor": [
+        [0, 0],
+        [40000, 0],
+        [40000, 60000],
+        [0, 60000]
+      ],
+      "clearHeightMm": 8500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 15000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 27000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 690000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": "midstates-hardware"
+    },
+    {
+      "id": "hf-ng-8",
+      "district": "northgate-park",
+      "address": "8 Northgate Drive",
+      "kind": "factory",
+      "description": "Modern factory with a stepped rear wall around the transformer pen.",
+      "site": [62, 132],
+      "floor": [
+        [0, 0],
+        [50000, 0],
+        [50000, 55000],
+        [38000, 55000],
+        [38000, 70000],
+        [0, 70000]
+      ],
+      "clearHeightMm": 7500,
+      "floorLoadKgPerM2": 3500,
+      "power": {
+        "kva": 500,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 26000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 45000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["general-manufacturing", "light-manufacturing", "assembly", "storage", "offices"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 980000,
+      "depositMonths": 3,
+      "termMonths": [24, 120],
+      "occupiedBy": null
+    },
+    {
+      "id": "hf-ng-9",
+      "district": "northgate-park",
+      "address": "9 Northgate Drive",
+      "kind": "commercial-unit",
+      "description": "Small trade unit by the park entrance.",
+      "site": [122, 132],
+      "floor": [
+        [0, 0],
+        [9000, 0],
+        [9000, 12000],
+        [0, 12000]
+      ],
+      "clearHeightMm": 3200,
+      "floorLoadKgPerM2": 750,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 2700,
+          "heightMm": 2700
+        }
+      ],
+      "uses": ["offices", "assembly", "light-manufacturing", "storage"],
+      "landlord": "Northgate Park Management",
+      "rentCentsPerMonth": 56000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": null
+    }
+  ]
+}

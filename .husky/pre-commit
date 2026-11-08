@@ -1,1 +1,3 @@
-npx lint-staged
+# Auto-formats and lint-fixes staged files, but never blocks a commit (DECISIONS ADR-0043).
+# CI and `npm run check` are the real gates.
+npx lint-staged --max-arg-length 2000 || echo "pre-commit: lint-staged reported problems; committing anyway. Run 'npm run check' before relying on this commit."

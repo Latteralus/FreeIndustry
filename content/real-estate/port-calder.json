@@ -1,0 +1,716 @@
+{
+  "city": {
+    "id": "port-calder",
+    "name": "Port Calder",
+    "region": "Michigan",
+    "population": 540000,
+    "description": "A large lake port with heavy industry on the harbor, higher wages and rents, and the most businesses of the three cities.",
+    "workforce": 268000,
+    "unemploymentPermille": 51,
+    "wageCentsPerHour": {
+      "production": 1340,
+      "warehouse": 1110,
+      "office": 1160,
+      "technical": 1790
+    },
+    "map": [450, 150]
+  },
+  "districts": [
+    {
+      "id": "harbor-estate",
+      "name": "Harbor Industrial Estate",
+      "description": "Warehouses and large factories beside the harbor, with a rail siding along the quay.",
+      "site": [380, 250],
+      "highwayAccessM": 2100,
+      "railSiding": true,
+      "streets": [
+        {
+          "name": "Quay Road",
+          "from": [0, 120],
+          "to": [380, 120],
+          "widthM": 12
+        }
+      ]
+    },
+    {
+      "id": "eastside-trade",
+      "name": "Eastside Trade Center",
+      "description": "Small workshops, garages and trade units in an inner suburb.",
+      "site": [380, 250],
+      "highwayAccessM": 900,
+      "railSiding": false,
+      "streets": [
+        {
+          "name": "Mercer Avenue",
+          "from": [0, 120],
+          "to": [380, 120],
+          "widthM": 12
+        },
+        {
+          "name": "Ninth Street",
+          "from": [200, 0],
+          "to": [200, 250],
+          "widthM": 10
+        }
+      ]
+    }
+  ],
+  "businesses": [
+    {
+      "id": "calder-steel-service",
+      "name": "Calder Steel Service",
+      "role": "supplier",
+      "trade": "Steel sheet, strip and bar cut to length"
+    },
+    {
+      "id": "northshore-appliance",
+      "name": "Northshore Appliance Works",
+      "role": "manufacturer",
+      "trade": "Kitchen appliances"
+    },
+    {
+      "id": "great-lakes-polymers",
+      "name": "Great Lakes Polymers",
+      "role": "supplier",
+      "trade": "Plastic resin pellets and colorants"
+    },
+    {
+      "id": "volta-coil-motor",
+      "name": "Volta Coil & Motor",
+      "role": "manufacturer",
+      "trade": "Small electric motors"
+    },
+    {
+      "id": "calder-department-stores",
+      "name": "Calder Department Stores",
+      "role": "buyer",
+      "trade": "Buying office: household goods and small appliances for its stores"
+    },
+    {
+      "id": "harbor-office-exchange",
+      "name": "Harbor Office Furniture Exchange",
+      "role": "buyer",
+      "trade": "Buys office furniture for resale (downtown)"
+    }
+  ],
+  "properties": [
+    {
+      "id": "pc-harbor-1",
+      "district": "harbor-estate",
+      "address": "1 Quay Road",
+      "kind": "warehouse",
+      "description": "Quayside warehouse with three loading docks.",
+      "site": [12, 48],
+      "floor": [
+        [0, 0],
+        [30000, 0],
+        [30000, 60000],
+        [0, 60000]
+      ],
+      "clearHeightMm": 8500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 11666,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 20332,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Harbor Board Estates",
+      "rentCentsPerMonth": 660000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-harbor-3",
+      "district": "harbor-estate",
+      "address": "3 Quay Road",
+      "kind": "warehouse",
+      "description": "Steel stockholder's warehouse with overhead crane rails.",
+      "site": [52, 36],
+      "floor": [
+        [0, 0],
+        [36000, 0],
+        [36000, 72000],
+        [0, 72000]
+      ],
+      "clearHeightMm": 8500,
+      "floorLoadKgPerM2": 4000,
+      "power": {
+        "kva": 50,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 19000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["storage", "distribution"],
+      "landlord": "Harbor Board Estates",
+      "rentCentsPerMonth": 890000,
+      "depositMonths": 3,
+      "termMonths": [12, 60],
+      "occupiedBy": "calder-steel-service"
+    },
+    {
+      "id": "pc-harbor-5",
+      "district": "harbor-estate",
+      "address": "5 Quay Road",
+      "kind": "factory",
+      "description": "Large factory hall with a heavy-duty floor.",
+      "site": [98, 18],
+      "floor": [
+        [0, 0],
+        [60000, 0],
+        [60000, 90000],
+        [0, 90000]
+      ],
+      "clearHeightMm": 7500,
+      "floorLoadKgPerM2": 5000,
+      "power": {
+        "kva": 600,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 21666,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 2,
+          "offsetMm": 40332,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["general-manufacturing", "light-manufacturing", "assembly", "storage", "offices"],
+      "landlord": "Harbor Board Estates",
+      "rentCentsPerMonth": 1750000,
+      "depositMonths": 3,
+      "termMonths": [24, 120],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-harbor-7",
+      "district": "harbor-estate",
+      "address": "7 Quay Road",
+      "kind": "factory",
+      "description": "Appliance plant with an attached boiler house.",
+      "site": [12, 132],
+      "floor": [
+        [0, 0],
+        [48000, 0],
+        [48000, 68000],
+        [38000, 68000],
+        [38000, 80000],
+        [0, 80000]
+      ],
+      "clearHeightMm": 7500,
+      "floorLoadKgPerM2": 3500,
+      "power": {
+        "kva": 500,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        },
+        {
+          "kind": "loading-dock",
+          "edge": 0,
+          "offsetMm": 25000,
+          "widthMm": 3000,
+          "heightMm": 3200
+        }
+      ],
+      "uses": ["general-manufacturing", "light-manufacturing", "assembly", "storage", "offices"],
+      "landlord": "Harbor Board Estates",
+      "rentCentsPerMonth": 1390000,
+      "depositMonths": 3,
+      "termMonths": [24, 120],
+      "occupiedBy": "northshore-appliance"
+    },
+    {
+      "id": "pc-harbor-10",
+      "district": "harbor-estate",
+      "address": "10 Quay Road",
+      "kind": "industrial-unit",
+      "description": "Unit with three-phase power and gas, near the rail siding.",
+      "site": [70, 132],
+      "floor": [
+        [0, 0],
+        [20000, 0],
+        [20000, 30000],
+        [0, 30000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 100,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Harbor Board Estates",
+      "rentCentsPerMonth": 270000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-harbor-12",
+      "district": "harbor-estate",
+      "address": "12 Quay Road",
+      "kind": "industrial-unit",
+      "description": "Unit fitted out as a bulk store.",
+      "site": [100, 132],
+      "floor": [
+        [0, 0],
+        [20000, 0],
+        [20000, 30000],
+        [0, 30000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Harbor Board Estates",
+      "rentCentsPerMonth": 270000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": "great-lakes-polymers"
+    },
+    {
+      "id": "pc-east-14",
+      "district": "eastside-trade",
+      "address": "14 Mercer Avenue (rear)",
+      "kind": "garage",
+      "description": "Lock-up garage in a court of six.",
+      "site": [12, 102],
+      "floor": [
+        [0, 0],
+        [3000, 0],
+        [3000, 6000],
+        [0, 6000]
+      ],
+      "clearHeightMm": 2300,
+      "floorLoadKgPerM2": 500,
+      "power": {
+        "kva": 3,
+        "threePhase": false
+      },
+      "water": false,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 300,
+          "widthMm": 2400,
+          "heightMm": 2100
+        },
+        {
+          "kind": "personnel",
+          "edge": 3,
+          "offsetMm": 600,
+          "widthMm": 800,
+          "heightMm": 2000
+        }
+      ],
+      "uses": ["light-manufacturing", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 14000,
+      "depositMonths": 1,
+      "termMonths": [1, 24],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-east-16",
+      "district": "eastside-trade",
+      "address": "16 Mercer Avenue (rear)",
+      "kind": "garage",
+      "description": "Wide lock-up garage with a water tap.",
+      "site": [25, 101],
+      "floor": [
+        [0, 0],
+        [3600, 0],
+        [3600, 6600],
+        [0, 6600]
+      ],
+      "clearHeightMm": 2300,
+      "floorLoadKgPerM2": 500,
+      "power": {
+        "kva": 3,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 300,
+          "widthMm": 2400,
+          "heightMm": 2100
+        },
+        {
+          "kind": "personnel",
+          "edge": 3,
+          "offsetMm": 600,
+          "widthMm": 800,
+          "heightMm": 2000
+        }
+      ],
+      "uses": ["light-manufacturing", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 16500,
+      "depositMonths": 1,
+      "termMonths": [1, 24],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-east-20",
+      "district": "eastside-trade",
+      "address": "20 Mercer Avenue",
+      "kind": "workshop",
+      "description": "Workshop with a three-phase supply.",
+      "site": [39, 95],
+      "floor": [
+        [0, 0],
+        [9000, 0],
+        [9000, 13000],
+        [0, 13000]
+      ],
+      "clearHeightMm": 3800,
+      "floorLoadKgPerM2": 1500,
+      "power": {
+        "kva": 25,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3000
+        }
+      ],
+      "uses": ["light-manufacturing", "assembly", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 78000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-east-22",
+      "district": "eastside-trade",
+      "address": "22 Mercer Avenue",
+      "kind": "workshop",
+      "description": "Workshop next door to number 20.",
+      "site": [58, 95],
+      "floor": [
+        [0, 0],
+        [9000, 0],
+        [9000, 13000],
+        [0, 13000]
+      ],
+      "clearHeightMm": 3800,
+      "floorLoadKgPerM2": 1500,
+      "power": {
+        "kva": 25,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 2,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 2,
+          "offsetMm": 3000,
+          "widthMm": 3000,
+          "heightMm": 3000
+        }
+      ],
+      "uses": ["light-manufacturing", "assembly", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 78000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": "volta-coil-motor"
+    },
+    {
+      "id": "pc-east-30",
+      "district": "eastside-trade",
+      "address": "30 Mercer Avenue",
+      "kind": "commercial-unit",
+      "description": "Trade unit with a shop front and rear roller door.",
+      "site": [12, 132],
+      "floor": [
+        [0, 0],
+        [12000, 0],
+        [12000, 15000],
+        [0, 15000]
+      ],
+      "clearHeightMm": 3200,
+      "floorLoadKgPerM2": 750,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 2700,
+          "heightMm": 2700
+        }
+      ],
+      "uses": ["offices", "assembly", "light-manufacturing", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 96000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": null
+    },
+    {
+      "id": "pc-east-32",
+      "district": "eastside-trade",
+      "address": "32 Mercer Avenue",
+      "kind": "commercial-unit",
+      "description": "Offices over a store.",
+      "site": [34, 132],
+      "floor": [
+        [0, 0],
+        [12000, 0],
+        [12000, 15000],
+        [0, 15000]
+      ],
+      "clearHeightMm": 3200,
+      "floorLoadKgPerM2": 750,
+      "power": {
+        "kva": 15,
+        "threePhase": false
+      },
+      "water": true,
+      "gas": false,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 2700,
+          "heightMm": 2700
+        }
+      ],
+      "uses": ["offices", "assembly", "light-manufacturing", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 96000,
+      "depositMonths": 2,
+      "termMonths": [6, 36],
+      "occupiedBy": "calder-department-stores"
+    },
+    {
+      "id": "pc-east-40",
+      "district": "eastside-trade",
+      "address": "40 Mercer Avenue",
+      "kind": "industrial-unit",
+      "description": "L-shaped unit wrapped around a neighbour's yard.",
+      "site": [56, 132],
+      "floor": [
+        [0, 0],
+        [16000, 0],
+        [16000, 17000],
+        [10000, 17000],
+        [10000, 25000],
+        [0, 25000]
+      ],
+      "clearHeightMm": 6000,
+      "floorLoadKgPerM2": 2500,
+      "power": {
+        "kva": 80,
+        "threePhase": true
+      },
+      "water": true,
+      "gas": true,
+      "doors": [
+        {
+          "kind": "personnel",
+          "edge": 0,
+          "offsetMm": 1000,
+          "widthMm": 900,
+          "heightMm": 2100
+        },
+        {
+          "kind": "roller-shutter",
+          "edge": 0,
+          "offsetMm": 3000,
+          "widthMm": 4000,
+          "heightMm": 4200
+        }
+      ],
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly", "storage"],
+      "landlord": "Eastside Realty Group",
+      "rentCentsPerMonth": 205000,
+      "depositMonths": 2,
+      "termMonths": [12, 60],
+      "occupiedBy": null
+    }
+  ]
+}

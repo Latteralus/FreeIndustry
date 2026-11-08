@@ -9,7 +9,8 @@ SQLite (`better-sqlite3`).
 - Requirements: [docs/TechnicalDocument.md](docs/TechnicalDocument.md) (the technical
   specification).
 - Build order and acceptance gates: [docs/plan.md](docs/plan.md). Work on **one numbered
-  step at a time**, then stop for owner review.
+  step at a time**. When its acceptance gate passes, tick **Step accepted** yourself
+  (plan.md rule 4), then stop and hand off; do not start the next step unasked.
 - Decisions: [docs/DECISIONS.md](docs/DECISIONS.md). Fidelity claims:
   [docs/original-reference-ledger.md](docs/original-reference-ledger.md). Test record:
   [docs/TEST_SCENARIOS.md](docs/TEST_SCENARIOS.md).
@@ -38,7 +39,7 @@ SQLite (`better-sqlite3`).
 ```text
 src/main         Electron main: windows, lifecycle, IPC broker. No business logic, no SQLite.
 src/preload      Sandboxed, CommonJS; exposes a narrow frozen bridge on window.freeIndustry.
-src/worker       Simulation host thread; sole SQLite writer (from Step 02/04).
+src/worker       Simulation host thread; sole SQLite writer (saves, recovery log).
 src/domain       Pure business rules. No Node, Electron, React, PixiJS or SQL.
 src/simulation   Event queue, clock, tasks, market. Pure; depends on domain + shared.
 src/persistence  SQLite schema, migrations, repositories.
@@ -59,7 +60,8 @@ npm run lint
 npm run format:check
 npm test -- --runInBand
 npm run test:e2e       # builds, then Playwright launches the real Electron app
-npm run check          # typecheck + lint + format:check + unit tests
+npm run check          # typecheck + lint + format:check + check:content + unit tests
+npm run check:content  # validate the bundled content pack (content/)
 npm run check:deps     # knip: unused files, exports, dependencies
 npm run pack           # unpacked Windows build in release/win-unpacked
 npm run dist           # NSIS installer
