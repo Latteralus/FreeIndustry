@@ -3,7 +3,7 @@
 ## Technical Architecture & Gameplay Systems Specification
 
 **Project designation:** Independent modern spiritual successor to _Free Enterpri$e / Free Enterprise_ (Tsunami Media, 1996)  
-**Document status:** Architecture and requirements baseline  
+**Document status:** Architecture and requirements baseline. Revised 2026-11-08 by owner decision: factory views are true top-down only, and the spec now defines the physical coordinate system and floor coverings (DECISIONS ADR-0044 – ADR-0046)  
 **Target platform:** Windows desktop, offline single-player  
 **Primary stack:** Electron + TypeScript + PixiJS + React + SQLite  
 **Development audience:** Human project owner and AI coding agents working in VS Code
@@ -32,7 +32,7 @@ The experience should feel like operating a real enterprise from a Windows-era m
 
 **D04 — Market causality.** Rivals, suppliers, buyers, logistics capacity, costs, demand, and prices have modeled causes. Competitors produce from resources and capacity, not unbounded scripted stock. Aggregate simulation is acceptable for off-screen sites, provided balance and capacity constraints are upheld.
 
-**D05 — The building is real.** Facility dimensions, rentable area, loading access, obstructions, and permitted usable floor area are authoritative. A tiny garage must occupy a tiny floor in the rendering; no scaling a 50 sq ft interior to look like a 10,000 sq ft factory.
+**D05 — The building is real.** Facility dimensions, rentable area, loading access, obstructions, and permitted usable floor area are authoritative. A tiny garage must occupy a tiny floor in the rendering; no scaling a 50 sq ft interior to look like a 10,000 sq ft factory. Every facility and object uses one coordinate system in integer millimetres on one 500 mm construction grid (§5.1).
 
 **D06 — Old-school presentation.** Traditional menubar and toolbar, draggable and resizable floating management windows, compact tables, readable small text, status bar, subdued colors, visual manufacturing activity behind open windows. No decorative particles, dramatic cinematic effects, oversized cards, gamified progress confetti, or forced modern dashboards.
 
@@ -43,6 +43,8 @@ The experience should feel like operating a real enterprise from a Windows-era m
 **D09 — Deterministic and testable.** Given seed, starting snapshot, content version, and ordered player commands, the simulation yields the same business and inventory outcomes. Presentation frames do not influence business results.
 
 **D10 — Offline, local, and ownable.** No required account, cloud services, telemetry, advertising, microtransactions, or network connection. Saves are local, exportable, and versioned. Original IP is not included.
+
+**D11 — Seen from directly overhead.** Factory interiors are drawn only in a true top-down, 2D orthographic projection looking straight down. There is no isometric, oblique, three-quarter or perspective view, and no tilted or rotating camera. The camera pans and zooms only. Every mode (layout, construction, operation, inspection) uses the same projection, and all art is drawn for an overhead view at real proportions. The factory should read as a living architectural floor plan with physically represented industrial activity (§3.3; DECISIONS ADR-0044, an owner decision).
 
 ### 1.3 Explicit exclusions
 
@@ -62,7 +64,7 @@ The original game's known mechanics are drawn from contemporary/retrospective de
 | -------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Select a U.S. city and inspect industrial buildings with size, rent, and businesses    | Retain                                     | Persistent cityscape, real buildings and competitors; additional garage/small-workspace properties                                          |
 | Choose buildings and products using local market information                           | Retain                                     | Industry/product discovery from real marketplace records, not fixed scripted prices                                                         |
-| Top-down factory layout, then operating/three-quarter viewing                          | Retain                                     | Editable top-down mode and separate live-observation rendering modes                                                                        |
+| Top-down factory layout, then operating/three-quarter viewing                          | Adapt (owner decision, ADR-0044)           | Retain planning and watching the plant run; **every** factory mode is true top-down. The three-quarter view is deliberately not reproduced  |
 | Menubar, toolbars, bottom status bar, floating management dialogs                      | Retain closely                             | Classic desktop window manager within Electron renderer, saved per-workspace layout                                                         |
 | Machinery, offices, conveyors, storage zones, carts, forklifts, safety and break areas | Retain                                     | Spatially coherent equipment components and physical movement capabilities                                                                  |
 | Job advertisements, applicants, wages, job-fit, assignments                            | Retain                                     | Persistent named candidates, worker skills, contracts, reviews, schedules                                                                   |
@@ -113,7 +115,7 @@ Persistent shell:
 
 - Menubar: **File, View, Company, City, Catalog, Personnel, Operations, Purchasing, Sales, Contracts, Research, Finance, Reports, Window, Help**.
 - Toolbar: **City View, Factory, Equipment Catalog, Personnel, Inbox, Bank, Reports, Pause/Run, Speed**.
-- Left/center: PixiJS factory view with pan/zoom, selection, placement grid overlays on demand.
+- Left/center: PixiJS factory view, true top-down (D11), with pan/zoom, selection, and the construction grid and placement overlays on demand.
 - Bottom status bar: date/time, active facility, cash, credit availability, alerts, selected object, speed, simulation state.
 - Traditional dialog affordances: title bars, compact tabs, dropdowns, sortable grids, tree navigation, small tooltips, keyboard shortcuts.
 - Default theme: muted gray and industrial-blue/green, hard-edged borders, restrained highlights; configurable UI scale for modern displays.
@@ -138,10 +140,20 @@ Persistent shell:
 
 ### 3.3 Factory display modes
 
-- **Layout mode:** clear top-down, accurate orthographic floor plan; snap to 0.5 m grid with sub-grid placement where necessary; machine port overlays; construction/placement controls. Pause when performing structural changes with collision and access implications.
-- **Operating mode:** old-school oblique/three-quarter view inspired by the original, preserving physical coordinates, legible objects, visible staff and movement; unobtrusive animation; same authoritative simulation, not a different game mode.
-- **Inspection view:** optionally top-down while running to inspect congestion and movement. Switching views never changes simulation outcomes.
-- **City view:** shows locations of companies, real estate, roads, and relationships. City zoom and property panel are functional, not decoration.
+**Perspective requirement (D11, ADR-0044; supersedes the 2026-11-07 baseline's oblique/three-quarter operating mode).** Every factory display mode uses one 2D orthographic projection looking straight down at 90°:
+
+- No isometric, oblique, three-quarter or perspective projection, no tilted camera, and no simulated 3D camera rotation. Sprites never show an object from an angle.
+- The camera has only a centre point in world millimetres and a zoom step. It is always north-up. Zoom changes how many pixels stand for a metre, never the physical size of anything, including a grid cell.
+- Rotating an object turns it on the floor, in quarter turns (§5.2). It never changes the view.
+- All machinery, furniture, workers, pallets, forklifts, conveyors and stock are drawn as seen from directly above, at their real proportions, with neutral, non-directional shading. The physical footprint is authoritative, and art is fitted to it.
+- Visual target: realistic and restrained. Practical industrial colours, readable silhouettes, appropriate surface detail, and no cartoon exaggeration.
+
+Modes differ only in controls, overlays, animation and interaction, never in camera angle. Switching modes keeps the camera position and never changes simulation outcomes.
+
+- **Layout and construction mode:** the editable plan. Snap to the 500 mm construction grid, with an optional 250 mm sub-grid (§5.1). Toggleable grid, port, clearance and footprint overlays; placement and floor-covering tools (§5.6). Pause when performing structural changes with collision and access implications.
+- **Operating mode:** the live plant in the same overhead projection. Legible objects, visible staff and movement, and unobtrusive animation. Same authoritative simulation, not a different game mode.
+- **Inspection view:** overlays for congestion, routes, states and measurements while running.
+- **City view:** shows locations of companies, real estate, roads, and relationships. City zoom and property panel are functional, not decoration. District and floor plans are plan views drawn to a fixed scale.
 
 ### 3.4 Information design
 
@@ -222,6 +234,30 @@ Enforce boundaries with lint/dependency rules. No circular imports. Prefer depen
 
 Use millimeters as the canonical integer world-space measurement. The main floor construction grid has a **500 mm** pitch, meaning each full tile represents **0.25 m² ≈ 2.69 ft²**. Store tile/world positions and sizes independently of pixel resolution. Display user-friendly square footage (or metric by setting). Scale a room from its documented dimensions; never fit unrelated floor sizes into a single fixed number of tiles.
 
+**Canonical units (ADR-0045).**
+
+- Every physical coordinate and dimension is stored as an integer number of millimetres. Exact areas are stored as `bigint` square millimetres.
+- Feet, inches, metres and square feet are display conversions only, chosen by the player's units preference (§12.3).
+- Screen pixels, sprite dimensions and tile counts are never authoritative measurements.
+- No building is enlarged or shrunk to look like another: at the same zoom, a garage is visibly smaller than a warehouse.
+- This one system underlies construction, equipment placement, worker movement, material handling, pathfinding, collision, storage capacity, docks and future multi-floor buildings. The simulation is independent of rendering resolution, frame rate and camera position.
+
+**Facility frame.** Each level of a facility has a local frame in millimetres. Its origin is the minimum corner of the floor outline's bounds, with x to the right and y down the plan. Levels share the building's origin and record an elevation, so upper floors align with those below.
+
+**Construction grid.** The grid is one world-wide constant of **500 mm × 500 mm**, the same in every building: 0.5 m by 0.5 m, 0.25 m², about 2.69 sq ft per cell.
+
+- Cell (col, row) covers x ∈ [500·col, 500·col + 500) and y ∈ [500·row, 500·row + 500) of its level. Its persistent identity is (property, level, col, row), derived from the millimetre coordinates. Cells are not separately stored entities.
+- The grid organises construction and floor coverings. It never replaces exact geometry.
+- Its visibility can be toggled. Zooming never changes the physical size a cell represents.
+
+**Usable floor, partial cells.**
+
+- A level's usable region is its floor polygon minus structural columns, obstacles, walls and forbidden zones. Its usable area is the exact area of that region, never its rectangular grid bounding box or a cell count.
+- Each cell is **full**, **partial** (part of it lies in the usable region) or **outside**. A partial cell carries its exact covered area, so boundary cells never inflate usable area.
+- Outside cells cannot be selected, purchased or customised.
+- Irregular buildings, columns, obstacles and inaccessible spaces are supported throughout.
+- Example: a 3,000 × 5,800 mm garage spans 72 cells, 6 of them 300 mm deep. Its area is 17.4 m², not 18 m².
+
 Example: a 10 ft × 5 ft / 50 sq ft workspace is only about 4.65 m² (about 19 grid cells); it cannot accommodate equipment larger than its actual bounds. A 100 ft × 100 ft / 10,000 sq ft facility represents about 929 m² (about 3,716 grid cells). Tile counts vary by geometry. This is intentional.
 
 Each property records:
@@ -238,7 +274,15 @@ Area calculations derive from polygons; allow irregular shapes, mezzanines, atta
 
 ### 5.2 Physical placement and pathfinding
 
-Equipment has a footprint, orientation, clearance envelope, supply ports, output ports, maintenance access, hazard area, power/utilities requirements, and operator stations. Placement is rejected when any constraint fails. Employees and equipment follow collision-aware routes. Storage capacity is volumetric/weight/footprint-bound; receiving and shipping consume dock capacity. A machine cannot operate while ports are obstructed or required utilities/staff are unavailable.
+Equipment has a footprint, orientation, clearance envelope, supply ports, output ports, maintenance access, hazard area, power/utilities requirements, and operator stations. Placement is rejected when any constraint fails.
+
+**Exact footprints and snapping (ADR-0045).**
+
+- Machines, conveyors, shelving, office furniture, racks, material-handling equipment and fixtures have real-world footprints in integer millimetres. A 12 ft × 6 ft machine is 3,658 × 1,829 mm at every zoom and whatever the size of its sprite. Footprints are never resized to fit a number of cells.
+- An object may stand on parts of several cells. Each cell underneath keeps its floor covering.
+- A placed object's authoritative position is the minimum corner of its rotated footprint, on a **250 mm placement lattice**. Layout mode snaps to the 500 mm grid by default, with optional 250 mm sub-grid snapping.
+- Orientation is a quarter turn (0°, 90°, 180°, 270°) about the vertical axis. The view stays overhead.
+- Collision, fit, clearances, ports, maintenance areas, worker stations, walls and utilities are checked on exact millimetre geometry, never on cell occupancy. The rendered object corresponds exactly to its physical footprint. Employees and equipment follow collision-aware routes. Storage capacity is volumetric/weight/footprint-bound; receiving and shipping consume dock capacity. A machine cannot operate while ports are obstructed or required utilities/staff are unavailable.
 
 Use a navigable grid/portal graph with A* or equivalent for walking. Rebuild only affected local graph regions after placement edits. Vehicle paths use separate access and turning constraints. Workers cannot pass through machines or closed walls. Dynamic occupancy prevents deadlocks via reservation/priority/yield rules with deterministic tie-breaks.
 
@@ -269,6 +313,45 @@ Model input/output ports, buffering, throughput, cycle/setup time, batch size, l
 For each accepted purchase order: reserve money/credit according to terms → supplier allocates inventory → carrier picks up real quantities → shipment travels in market simulation → truck arrives through valid property access → authorized employee/handling device unloads to dock → internal transportation places stock into storage or production → production allocates exact inputs → outputs and waste appear in machine buffer → outputs are moved to storage or downstream machines → sales order reserves finished goods → worker stages and loads shipment → carrier departs → title/payment and receivable events settle per contract.
 
 The player's inspection UI must be able to trace any stock lot to its origin, machine transformations, movements and destination. Stock may never be consumed twice, ship before loading, or silently vanish on a worker's task cancellation.
+
+### 5.6 Facility layers and floor coverings
+
+**Layers (ADR-0046).** A factory consists of six conceptual layers:
+
+1. Base property geometry and structure: outline, walls, columns, forbidden zones, doors, docks, levels, and the slab with its structural load capacity.
+2. Floor covering: one material per eligible cell.
+3. The construction grid and editing overlays: derived, never stored.
+4. Placed machinery, furniture, equipment and storage.
+5. Workers, vehicles, stock and other moving physical objects.
+6. Selection indicators, operational feedback and inspection overlays.
+
+Layers 1, 2, 4 and 5 are authoritative state; layers 3 and 6 are presentation. This is a model of independence, not a requirement for six PixiJS containers. Replacing the floor under a machine never deletes, moves or resets the machine, and moving equipment never changes a floor covering.
+
+**Structure is not covering.** Structural floor-load capacity belongs to the slab (layer 1). No covering changes it.
+
+**Individually customisable floors.**
+
+- Every eligible 500 mm cell has its own floor material.
+- The catalog of materials is data-driven content (§12.1): standard, worn, polished and painted concrete, industrial epoxy, steel plate, diamond plate, anti-slip surfaces, safety and hazard markings, office floors, and more as content grows.
+- Each property listing names its existing starting surface, normally basic concrete. A new lease begins with that surface.
+- A material's visible pattern is independent of the construction grid. Seamless epoxy looks nearly continuous; concrete bays and steel plates show joints at their own module.
+- All floor art is drawn for the overhead view (D11), detailed enough to look believable without overwhelming machines, workers and stock.
+
+**Player interactions (plan Step 09A).**
+
+- Select single cells, rectangles, a whole level, or a contiguous area with a fill tool. Whole rooms or designated areas are filled the same way until zones exist.
+- Preview a material and see the cost of the change before buying.
+- Buy and install, replace existing coverings, and mix materials within one building.
+- Customised floors persist through save and load.
+
+**Purchases are real transactions.**
+
+- Materials have integer-cent prices per square metre. Cost follows the exact covered area, so a partial cell costs only its share.
+- Replacing a covering is distinguishable from initial installation: removing the old material is priced and posted separately.
+- Orders respect available cash (and credit once banking exists), post balanced journal entries through the existing books, persist across saves, and are deterministic and auditable.
+- There are no cosmetic purchases that bypass the simulation.
+
+**No gameplay effects yet.** Initially a covering affects only appearance and cost. The material schema may carry optional functional fields (slip resistance, durability and wear, maintenance and cleaning, process suitability, and the covering's own load rating, which never raises the slab's). They have no effect until a step specifies a rule and records it in DECISIONS.
 
 ---
 
@@ -428,20 +511,21 @@ Use `better-sqlite3` only in the worker/native Node context, never in the unpriv
 
 ### 10.2 Core relational schema (logical baseline)
 
-| Table / group                                                                                                                | Role and primary relationships                                      |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `worlds`, `world_metadata`, `schema_migrations`                                                                              | World identity, seed, content/version, integrity, migration version |
-| `cities`, `districts`, `parcels`, `properties`, `facility_floors`, `floor_obstacles`, `dock_points`                          | Real estate, true physical geometry, occupancy and transport access |
-| `firms`, `firm_facilities`, `ownerships`, `leases`, `bank_accounts`, `loans`                                                 | Companies, capital, leases and borrowing                            |
-| `people`, `employment`, `roles`, `skills`, `employee_skill_levels`, `shifts`, `attendance`                                   | Persistent staff and labor conditions                               |
-| `workstations`, `machine_instances`, `machine_ports`, `machine_capabilities`, `machine_state`                                | Manufacturing equipment and physical operating stations             |
-| `products`, `recipes`, `recipe_inputs`, `recipe_outputs`, `technologies`, `research_projects`                                | Manufacturing definitions and research                              |
-| `locations`, `stock_lots`, `serialized_items`, `load_units`, `lot_contents`, `stock_movements`, `stock_reservations`         | Physical goods and provenance                                       |
-| `work_orders`, `tasks`, `task_assignments`, `task_events`, `machine_runs`, `quality_inspections`                             | Operations, task states and output verification                     |
-| `market_offers`, `rfqs`, `quotes`, `contracts`, `contract_lines`, `purchase_orders`, `sales_orders`, `shipments`, `invoices` | Commercial actions and deliveries                                   |
-| `ledger_accounts`, `journal_entries`, `journal_lines`, `payment_allocations`, `inventory_cost_layers`                        | Double-entry accounting and cost basis                              |
-| `manager_policies`, `delegation_limits`, `approvals`, `memos`, `audit_events`                                                | Player control, staff automation and transparency                   |
-| `simulation_events`, `world_snapshots`, `command_log`, `render_projections`, `save_metadata`                                 | Deterministic replay, resumability, indexed view data               |
+| Table / group                                                                                                                | Role and primary relationships                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `worlds`, `world_metadata`, `schema_migrations`                                                                              | World identity, seed, content/version, integrity, migration version                   |
+| `cities`, `districts`, `parcels`, `properties`, `facility_floors`, `floor_obstacles`, `dock_points`                          | Real estate, true physical geometry, occupancy and transport access                   |
+| `floor_materials`, `floor_cell_coverings`, `floor_covering_installations`                                                    | Floor covering per 500 mm cell (sparse), and who installed it at what cost (ADR-0046) |
+| `firms`, `firm_facilities`, `ownerships`, `leases`, `bank_accounts`, `loans`                                                 | Companies, capital, leases and borrowing                                              |
+| `people`, `employment`, `roles`, `skills`, `employee_skill_levels`, `shifts`, `attendance`                                   | Persistent staff and labor conditions                                                 |
+| `workstations`, `machine_instances`, `machine_ports`, `machine_capabilities`, `machine_state`                                | Manufacturing equipment and physical operating stations                               |
+| `products`, `recipes`, `recipe_inputs`, `recipe_outputs`, `technologies`, `research_projects`                                | Manufacturing definitions and research                                                |
+| `locations`, `stock_lots`, `serialized_items`, `load_units`, `lot_contents`, `stock_movements`, `stock_reservations`         | Physical goods and provenance                                                         |
+| `work_orders`, `tasks`, `task_assignments`, `task_events`, `machine_runs`, `quality_inspections`                             | Operations, task states and output verification                                       |
+| `market_offers`, `rfqs`, `quotes`, `contracts`, `contract_lines`, `purchase_orders`, `sales_orders`, `shipments`, `invoices` | Commercial actions and deliveries                                                     |
+| `ledger_accounts`, `journal_entries`, `journal_lines`, `payment_allocations`, `inventory_cost_layers`                        | Double-entry accounting and cost basis                                                |
+| `manager_policies`, `delegation_limits`, `approvals`, `memos`, `audit_events`                                                | Player control, staff automation and transparency                                     |
+| `simulation_events`, `world_snapshots`, `command_log`, `render_projections`, `save_metadata`                                 | Deterministic replay, resumability, indexed view data                                 |
 
 Use stable UUID/ULID-like IDs (or deterministic sequence-based IDs during simulation), foreign keys, explicit units, and schema migration guards. Never store core simulation state only as an opaque JSON blob. JSON columns can hold versioned details, but financial, inventory, people, and contract relationships should remain queryable.
 
@@ -579,6 +663,19 @@ Expose renderer-safe, typed APIs such as `simulation.getSnapshot()`, `simulation
 
 Scenes: `CityScene`, `FactoryLayoutScene`, `FactoryOperationScene`, `InspectionOverlay`. Components: `Camera`, `TileGrid`, `BuildingLayer`, `MachineLayer`, `WorkerLayer`, `LoadUnitLayer`, `RouteOverlay`, `SelectionLayer`, `StatusOverlay`. Use reusable spritesheets and atlases. Manage culling, pooling and depth sorting. Camera pan and zoom cannot alter physical scale. Render machine footprint and ports to exact simulation coordinates; provide optional measurement ruler and area overlay.
 
+**Orthographic renderer requirements (D11; ADR-0044, ADR-0046).**
+
+- **One projection.** Every factory scene uses the same orthographic, straight-down projection. World-to-screen is a single affine map (millimetres × pixels per metre / 1,000, minus the camera centre). Screen-to-world is its exact inverse.
+- **The camera** holds a centre point and a zoom step only, with no tilt or rotation. `FactoryLayoutScene` and `FactoryOperationScene` share it and differ only in tools, overlays and animation.
+- **"Depth sorting"** above means ordering by layer and height above the floor. Nothing is sorted by screen y as in angled views.
+- **`TileGrid` is two things**, both independent of placed objects:
+  - a `FloorLayer` that draws coverings in cached chunks of cells (for example 16 × 16) with viewport culling and dirty-chunk redraws;
+  - a toggleable `GridOverlay` on exact 500 mm cell boundaries.
+- **No per-cell objects.** Large floors (tens of thousands of cells) must not create a React element per cell, nor a PixiJS display object per cell at ordinary zooms.
+- **Textures.** Floor textures come from reusable atlases, with variants chosen by a fixed hash of the cell coordinates to avoid visible repetition. Detail scales with zoom: flat material colour when zoomed out, texture when zoomed in.
+- **Stable selection.** Sprites are keyed by stable entity IDs, so selection is the same in every mode.
+- **Read-only projection.** The renderer only reflects authoritative state. Local placement and floor previews are renderer state until a validated simulation command makes them authoritative.
+
 Update visuals from read-only domain projection messages. Sprite position is computed from authoritative position and interpolation horizon; authoritative physical transfer state remains unchanged until the simulation event occurs. Allow 60 FPS display where supported; when accelerated simulation exceeds rendering capacity, batch visual deltas while preserving simulated event ordering and final positions.
 
 ---
@@ -589,7 +686,9 @@ Update visuals from read-only domain projection messages. Sprite position is com
 
 Pack original game-inspired classes of manufactured goods into **new, independently authored** content definitions: lumber and wood components, hardware, basic plastics, packaging, appliances, electrical parts, electronics, furniture, industrial components, consumer goods. Support intermediate components and finished products. Do not limit product count to 100; this is a reference to the original game's range, not an arbitrary engine ceiling.
 
-Each `product` definition includes: stable ID, category, unit of measure, physical dimensions/weight or container rules, material class, quality parameters, shelf life where relevant, market preferences, storage requirements, handling equipment, and visual asset reference.
+Each `product` definition includes: stable ID, category, unit of measure, physical dimensions/weight or container rules, material class, quality parameters, shelf life where relevant, market preferences, storage requirements, handling equipment, and visual asset reference. Every visual asset for the factory is drawn for the overhead view (D11).
+
+Each `floor material` definition (ADR-0046) includes: stable ID, name, category, installation and removal prices per square metre in integer cents, texture set with variants and visible pattern module, and optional functional properties that have no effect until a rule is specified. Each property listing names its starting floor material.
 
 Each `recipe` defines: inputs, output(s), byproducts/scrap, compatible machine capabilities, process stages, batch sizes, setup requirements, labor tasks, quality model and utility consumption. Every conversion is unit-balanced according to explicit yield/loss rules; waste must be accounted for.
 
@@ -767,26 +866,33 @@ npm run test
 - No copyrighted original code, art, sound, or text in this repository.
 ```
 
+The repository's `CLAUDE.md` extends this baseline, for example with the true top-down, millimetre-coordinate and floor-layer rules of D11 and §5.
+
 ---
 
 ## 14. Invariant-driven testing and acceptance criteria
 
 ### 14.1 High-priority property tests
 
-| Invariant                | Required verification                                                                                                      |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| Material conservation    | For each transformation, input = output + scrap/loss according to recipe units; no negative stock                          |
-| Physical provenance      | Each lot's origin, current load unit/location and complete movement sequence can be reconstructed                          |
-| Capacity                 | No machine, pallet, shelf, dock, building, or vehicle exceeds stated area/volume/weight/cycle capacity                     |
-| Staff reality            | No staff member performs two overlapping tasks, works while absent, or moves impossibly                                    |
-| Money and ledgers        | Every journal balances, no double payment, credit limits respected, bank balances reconcile                                |
-| Orders and shipping      | A customer order cannot ship more accepted goods than actually staged/loaded                                               |
-| Contracts and delegation | No manager spends beyond authority; player overrides apply to subsequent actions                                           |
-| Geometry                 | A facility always renders at a fixed scale derived from real coordinates and cannot contain equipment outside floor bounds |
-| Determinism              | Same seed + state + command log results in identical state hash, despite FPS/window changes                                |
-| Persistence              | Save/load during active machinery, transit, payroll and pending orders yields identical continuation                       |
-| Competitor constraints   | AI firms cannot produce without inputs, capacity, working capital and staff/aggregate labor                                |
-| UI integrity             | Closing or moving windows never changes factory outcomes or loses pending approved commands                                |
+| Invariant                | Required verification                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Material conservation    | For each transformation, input = output + scrap/loss according to recipe units; no negative stock                           |
+| Physical provenance      | Each lot's origin, current load unit/location and complete movement sequence can be reconstructed                           |
+| Capacity                 | No machine, pallet, shelf, dock, building, or vehicle exceeds stated area/volume/weight/cycle capacity                      |
+| Staff reality            | No staff member performs two overlapping tasks, works while absent, or moves impossibly                                     |
+| Money and ledgers        | Every journal balances, no double payment, credit limits respected, bank balances reconcile                                 |
+| Orders and shipping      | A customer order cannot ship more accepted goods than actually staged/loaded                                                |
+| Contracts and delegation | No manager spends beyond authority; player overrides apply to subsequent actions                                            |
+| Geometry                 | A facility always renders at a fixed scale derived from real coordinates and cannot contain equipment outside floor bounds  |
+| Grid and area            | Usable area equals exact polygon area minus obstacles; per-cell covered areas sum to it; no outside cell is eligible        |
+| Placement lattice        | Every placed position lies on the 250 mm lattice in a quarter-turn orientation; footprints equal their catalog dimensions   |
+| Floor layers             | Changing a covering never changes placed or moving objects, or structural load; changing equipment never changes coverings  |
+| Floor purchases          | Cost equals exact covered area × prices, posted once and balanced; refused orders change nothing                            |
+| Projection               | Every factory mode uses one overhead projection; the camera has no tilt/rotation; mode switches leave the world hash intact |
+| Determinism              | Same seed + state + command log results in identical state hash, despite FPS/window changes                                 |
+| Persistence              | Save/load during active machinery, transit, payroll and pending orders yields identical continuation                        |
+| Competitor constraints   | AI firms cannot produce without inputs, capacity, working capital and staff/aggregate labor                                 |
+| UI integrity             | Closing or moving windows never changes factory outcomes or loses pending approved commands                                 |
 
 ### 14.2 Scenario tests
 
@@ -809,6 +915,8 @@ npm run test
 **S09 — Desktop UI:** Open personnel, market report, contracts and machine catalog in movable windows while the live factory remains visible; move, resize, tile and save layout; restore exactly.
 
 **S10 — Fast-forward:** Advance a simulated week at high speed and compare to a slow visible run from the same seed and commands. Domain hashes must match.
+
+**S11 — Floor coverings:** In a leased building with an irregular outline, a column and partial boundary cells, place a machine, then replace the floor across a rectangle and a filled area that includes cells under the machine and partial cells. The quote equals exact covered area × prices; cash falls by exactly that amount in one balanced entry, with removal shown separately from installation; outside cells and an unaffordable order are refused with nothing changed; the machine and the slab's load capacity are unchanged; the floor is drawn overhead in every mode and survives save/load identically.
 
 ### 14.3 Performance engineering
 

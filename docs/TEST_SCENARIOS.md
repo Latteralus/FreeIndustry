@@ -39,7 +39,7 @@ Playwright only (Jest never collects it).
 - Packaging (`npm run pack` / `npm run dist`) downloads the Electron zip on first run and
   needs network access at build time only. The app itself needs no network.
 
-## Specification scenarios S01–S10 (spec §14.2)
+## Specification scenarios S01–S11 (spec §14.2)
 
 | ID  | Scenario                 | First possible step    | Status                                                                                                                                                                                                        |
 | --- | ------------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,6 +53,7 @@ Playwright only (Jest never collects it).
 | S08 | Save/load                | 04 (kernel), 34 (full) | Kernel level passing (Step 04): save with events pending, restart, resume = uninterrupted; company books too (Step 05); full S08 (truck, machine, contract) at Step 34                                        |
 | S09 | Desktop UI               | 06                     | Passing (Step 06) with the windows that exist (Company, Accounts, Bills and Obligations, Saved Games, Diagnostics); personnel, market report, contracts and machine catalog windows arrive with their systems |
 | S10 | Fast-forward determinism | 03                     | Kernel level passing (Step 03) on a test-fixture world; repeat with real systems at Steps 17 and 34                                                                                                           |
+| S11 | Floor coverings          | 09A                    | Not started (added 2026-11-08, DECISIONS ADR-0046); the cell data is Step 08, the rendering Step 09                                                                                                           |
 
 ## Step 01 tests
 
@@ -194,6 +195,18 @@ projection from the same content (`tests/support/sample-real-estate.ts`), so the
 | `tests/e2e/city.spec.ts`                          | **Gate in the real app.** Main Menu → New Company → City Selection → City View; the garage drawn 6 px and the old mill 72 px wide at 2 px a metre; different areas and amounts due; an occupied building cannot be leased; a factory lease refused for want of funds with nothing changed; the workshop leased with the funds available (cash $28,440); its empty floor drawn 80 × 120 px at 10 px a metre; save, quit, relaunch with another seed, load: fingerprint, lease, books and floor identical. Quick Start, Options (metric), Help and Exit from the main menu. **Regression:** no CSP violation from the very first script through the city windows and the Lease dialog                                                                                                   |
 
 ## Verification log
+
+### 2026-11-08 — Documentation only: top-down perspective, coordinates, floor coverings (ADR-0044 – ADR-0046)
+
+Owner decisions recorded in the spec, plan, decisions, ledger, `CLAUDE.md` and `README.md`. No
+source, test, content or configuration file changed, and no step's acceptance status changed.
+
+| Command              | Result                                                                                                                                                                                                    |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check`      | Pass: TS 7 typecheck, ESLint, format check (all files, including the edited Markdown), `check:content` (freeindustry-base/1: 3 cities, 6 districts, 41 properties, 27 vacant), Jest 50 suites / 626 tests |
+| `npm run check:deps` | Pass                                                                                                                                                                                                      |
+
+Not run: `npm run test:e2e` and packaging (nothing they exercise changed).
 
 ### 2026-11-08 — Step 07, Windows 11 Pro 10.0.26300, Node 24.22.1, npm 12.2.2
 

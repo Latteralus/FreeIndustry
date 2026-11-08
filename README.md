@@ -48,8 +48,10 @@ few rules we don't bend:
 - **Every employee is a person.** Staff are named individuals with skills, wages, shifts and
   a work history. They only work when they are actually on site, and office work is real
   work with real effects.
-- **The building is real.** Premises have true dimensions. A small garage really is small,
-  and a machine that doesn't fit can't be placed.
+- **The building is real.** Premises have true dimensions, measured to the millimetre on one
+  half-metre construction grid, and seen from directly overhead like a living floor plan. A
+  small garage really is small, a machine that doesn't fit can't be placed, and you can
+  choose and pay for the flooring square by square.
 - **The market has causes.** Suppliers, customers and rival firms have finite stock, money
   and capacity. Prices come from real offers and real demand, and rivals produce from real
   inputs, not scripted numbers.
@@ -69,8 +71,9 @@ few rules we don't bend:
 
 Where the original was limited, FreeIndustry improves rather than copies it. Time is
 continuous and can be paused, stepped or fast-forwarded to the end of the day or the next
-event, and a company can expand to several sites. Each feature is labelled in the ledger as
-faithful, reconstructed or new.
+event, and a company can expand to several sites. The factory is shown from directly
+overhead in every mode, rather than in the original's angled operating view. Each feature is
+labelled in the ledger as faithful, reconstructed or new.
 
 ## Requirements
 

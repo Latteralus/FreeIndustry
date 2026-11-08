@@ -33,6 +33,18 @@ SQLite (`better-sqlite3`).
   physical/business state transition is not implemented.
 - No arbitrary visual effects or UI redesign away from movable-window desktop UI.
 - No copyrighted original code, art, sound, or text in this repository.
+- Factory views are **true top-down only** (spec D11, DECISIONS ADR-0044): one 2D
+  orthographic projection straight down in every mode (layout, operating, inspection). No
+  isometric, oblique, three-quarter or perspective view; the camera pans and zooms, never
+  tilts or rotates; all art is drawn for the overhead view at real proportions, fitted to
+  the object's physical footprint.
+- Physical coordinates and dimensions are integer millimetres, areas `bigint` mm²
+  (ADR-0045). The construction grid is always 500 mm; placements sit on a 250 mm lattice in
+  quarter turns. Never treat pixels, sprite sizes or tile counts as measurements, and never
+  derive area from cell counts.
+- Structure (geometry, slab load), floor coverings (one material per eligible cell) and
+  placed objects are separate state (ADR-0046). Changing one never changes another, and
+  floor purchases go through the books like any other expenditure.
 
 ## Layout and boundaries
 

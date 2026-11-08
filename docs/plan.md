@@ -17,6 +17,7 @@
 5. Keep project reference files current: `docs/TechnicalDocument.md`, `docs/DECISIONS.md`, `docs/original-reference-ledger.md`, `docs/TEST_SCENARIOS.md`, and `docs/plan.md`. Add architecture decision records when the design changes materially.
 6. Present a concise handoff after each step: files changed, meaningful behaviors, tests run/pass/fail, remaining limitations, and the exact next step. Stop after the step rather than autonomously implementing the next numbered step; the owner decides when to start it and can reopen an accepted step at any time.
 7. If a step becomes too large for one agent assignment, split it into `Step NN.a`, `Step NN.b`, etc., **without relaxing its final acceptance gate**. Keep dependencies explicit.
+8. A new step added to the plan takes a capital-letter suffix after the step it follows (for example `Step 09A`, done after 09 and before 10). Existing step numbers never change, because code, tests, saves and records cite them.
 
 ### Rules that apply to every step
 
@@ -24,6 +25,8 @@
 - [ ] Architecture stays separated: Electron main/preload; React UI; PixiJS scene; pure simulation/domain; SQLite persistence.
 - [ ] Rendering never owns money, inventory, workers, machine state, or time. IPC commands are validated and auditable; the renderer cannot write the database directly.
 - [ ] Domain money uses integer minor currency units, physical dimensions use integer canonical units, and quantities use explicit units without floating-point inventory drift.
+- [ ] Physical coordinates and dimensions are integer millimetres on the one 500 mm construction grid (DECISIONS ADR-0045). Pixels, sprite sizes and tile counts are never authoritative.
+- [ ] Every factory view is **true top-down**: one 2D orthographic projection straight down, no isometric/oblique/three-quarter/perspective view, a camera that only pans and zooms, and art drawn for the overhead view at real proportions (spec D11, ADR-0044). This applies to every step that draws anything in the factory.
 - [ ] Randomness is seeded; replay and pause/speed/render changes cannot alter the result of the same ordered command sequence.
 - [ ] No materials created, destroyed, duplicated, moved, processed, or shipped without a recorded, valid operation. Physical stock can be individually serialized or stored in **exactly counted**, inspectable containers/lots.
 - [ ] No employee working invisibly, absent, off shift, in two places, or on two overlapping tasks. No manager authority beyond the player's policy.
@@ -204,21 +207,102 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 - [ ] Use canonical integer millimeters and a consistent world-to-pixel transform; provide the specified 500-mm construction grid.
 - [ ] Implement factory layout mode with pan/zoom, rotation, bounds/collision checks, clearance envelopes, walkways, access zones, and placement previews.
 - [ ] Define equipment footprint/cost/utility/port data; purchasing equipment creates owned equipment that must be installed before use.
+- [ ] **Coordinates and grid (ADR-0045).**
+  - Each level has a local millimetre frame with its origin at the outline's minimum corner; content validation refuses outlines that do not start there.
+  - One world-wide `CONSTRUCTION_GRID_MM = 500`. Cell identity is (property, level, col, row), derived from coordinates.
+  - Each cell is classified full, partial or outside against the exact usable region (outline minus columns, obstacles and forbidden zones), with its exact covered area in `bigint` mm².
+  - Usable area is the exact region area, never a cell count or bounding box.
+- [ ] **Exact placement (ADR-0045).**
+  - Footprints are integer mm from catalog data and never rounded to cells.
+  - Positions lie on the 250 mm lattice; layout mode snaps to 500 mm by default, with an optional 250 mm sub-grid.
+  - Orientation is a quarter turn about the vertical axis.
+  - Collision, clearance, ports, maintenance areas, operator stations, walls and utilities are tested on exact geometry, not cell occupancy.
+  - Structural floor-load capacity stays a property of the slab.
+- [ ] **Floor-covering data architecture (ADR-0046), without purchasing.**
+  - A data-driven, validated floor-material catalog (`content/floor-materials/`, part of `check:content`).
+  - A starting-surface material for every property listing.
+  - The sparse per-cell covering layer in world state, read model, fingerprints and the next save format, with invariants: covered cells are eligible and materials are known.
+  - Coverings are independent of placed objects.
+- [ ] The layout view shows the toggleable construction grid on exact cell boundaries, top-down (D11), and draws each placed object exactly to its footprint.
 
-**Acceptance gate:** A tiny garage renders tiny relative to a large warehouse; floor area derives from geometry, not viewport size. An oversized machine or blocked route cannot be placed. Every placement and expenditure persists exactly.
+**Acceptance gate:** A tiny garage renders tiny relative to a large warehouse; floor area derives from geometry, not viewport size. An oversized machine or blocked route cannot be placed. Every placement and expenditure persists exactly. In addition:
 
-## Step 09 — PixiJS factory renderer and observation mode
+- **Area tests.** Property tests over random rectilinear outlines with columns show that the per-cell covered areas sum exactly to the usable area. The 3,000 × 5,800 mm garage has 72 cells, 6 of them partial, and 17.4 m².
+- **Placement tests.** Positions off the 250 mm lattice and non-quarter-turn orientations are refused. A footprint that is not a multiple of 500 mm (for example 3,658 × 1,829 mm) is placed, stored and reloaded with its exact dimensions.
+- **Zoom tests.** Zooming never changes a cell's or a machine's physical size.
+- **Floor-layer tests.** Every listing loads with its starting surface. Moving or removing equipment leaves every cell's covering unchanged. Covering state round-trips through save/load with identical fingerprints.
+- **Saves.** The earlier fixture saves still upgrade.
+
+## Step 09 — PixiJS factory renderer: true top-down layout and operating views
 
 - [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+
+> **Superseded 2026-11-08 (owner decision, DECISIONS ADR-0044):** this step originally asked for "top-down layout mode and an old-school oblique/three-quarter operating mode". No oblique, three-quarter or isometric mode will be built. Every mode is true top-down.
 
 **Build:**
 
 - [ ] Implement rendering projections from authoritative domain state, selection/inspection synchronization, stable sprite IDs, camera transforms, and texture management.
-- [ ] Provide top-down layout mode and an old-school oblique/three-quarter operating mode derived from the **same physical coordinates**.
-- [ ] Render facilities, machines, doors, storage zones, docks, and placeholder original industrial sprites (newly authored, not copied from the original).
-- [ ] Establish scene diff updates, sprite pooling, zoom behavior, UI overlays, and minimal operational state indicators.
+- [ ] **One orthographic projection** (D11, ADR-0044):
+  - Layout/construction, operating and inspection modes all draw straight down from the **same physical coordinates**. They differ only in tools, overlays and animation.
+  - World-to-screen is one affine map with an exact inverse.
+  - The camera holds a centre in mm and a zoom step only: it pans and zooms, never tilts or rotates, and is north-up.
+  - Rotating an object turns its footprint on the floor, never the view.
+- [ ] Render facilities, machines, doors, storage zones, docks, and placeholder original industrial sprites (newly authored, not copied from the original):
+  - every sprite drawn for the overhead view at real proportions, with neutral shading so quarter turns stay correct;
+  - each object's drawn extent equals its physical footprint;
+  - drawing order by layer and height, never by screen y.
+- [ ] **Floor and grid rendering (ADR-0046):**
+  - a floor layer drawing each cell's covering from the Step 08 data, in cached chunks with viewport culling and dirty-chunk redraws;
+  - texture atlases with deterministic per-cell variants, and each material's own decorative pattern, independent of the grid;
+  - level-of-detail by zoom;
+  - a toggleable grid overlay aligned to exact 500 mm cell boundaries at every zoom;
+  - floor and objects rendered as independent layers;
+  - no React element per cell, and no display object per cell at ordinary zooms.
+- [ ] Establish scene diff updates, sprite pooling, zoom behavior, UI overlays, and minimal operational state indicators. Local previews stay renderer state until a validated command.
 
-**Acceptance gate:** A machine appears at its actual real-world location in both display modes; both views select the same machine entity. Switching or closing views never changes the world hash. Rendering is functional and deliberately understated.
+**Acceptance gate:**
+
+- **Same entity in every mode.** A machine appears at its actual real-world location in every display mode, and every mode selects the same machine entity. Switching or closing views never changes the world hash. Rendering is functional and deliberately understated.
+- **Transform and camera tests.** Automated tests prove that world↔screen round-trips are exact at every zoom step, that a 500 mm cell and a machine footprint measure exactly mm × pixels per metre / 1,000 on screen in every mode, and that the camera state has no tilt or rotation and modes share one projection.
+- **Proportions in the real app.** A Playwright test in the real app measures a garage and a large warehouse at the same zoom (the garage is smaller, in true proportion), a machine's pixel bounds against its footprint, and grid lines against cell boundaries.
+- **Floor rendering.** A fixture with mixed coverings renders each cell's material. Changing one cell's covering in the fixture redraws only its chunk and leaves every object sprite untouched. A floor of at least 40,000 cells renders with display objects bounded by the visible chunks, not by the cell count (counts recorded; no frame-rate claims before Step 33).
+- **Visual review.** A screenshot review of layout, operating and inspection modes, recorded in TEST_SCENARIOS, confirms that every view is overhead and that no sprite shows an angled face.
+
+## Step 09A — Floor coverings: purchase, installation and editing
+
+- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+
+Added 2026-11-08 by owner decision (DECISIONS ADR-0046). It depends on Steps 05 (books), 08 (cells and the covering layer) and 09 (renderer and selection) and nothing later depends on it, so it may be moved later without breaking the order. Settle ADR-0046's four **Owner review** points (timing, work under equipment, accounting treatment, end of lease) before starting.
+
+**Build:**
+
+- [ ] A read-only quote request and a validated, idempotent `facility.installFloorCovering` command:
+  - cells as rectangles in cell coordinates;
+  - refusal with nothing changed for cells that are not eligible, an unknown material, premises the company does not hold, or insufficient funds (shown with the figures);
+  - cells already in the chosen material are skipped and not charged.
+- [ ] Exact cost from covered area:
+  - installation price for initial installation;
+  - removal of the old material plus installation of the new for replacement, posted separately;
+  - `bigint` arithmetic, rounded once per order;
+  - one balanced journal entry per order through the existing books;
+  - an installation record of who paid, when, what and how much.
+- [ ] Layout-mode floor tools:
+  - select a single cell, a rectangle, the whole level, or a contiguous fill;
+  - preview the material in place and show the cost before buying;
+  - replace existing coverings and mix materials in one building.
+  - The fill is computed for the preview and submitted as explicit rectangles that the worker validates again.
+- [ ] A Floor Materials catalog window listing the data-driven materials with prices and samples. The covering of a selected cell is shown in its inspector.
+- [ ] Persistence of installations and coverings in the save format, a frozen fixture, and the upgrade of earlier fixtures.
+
+**Acceptance gate:**
+
+- **Spec scenario S11 passes headless and in the real app.**
+- **Exact charges.** Cash falls by exactly the quoted amount. Partial cells are charged only for their covered area. Replacement is distinguishable from installation in the books.
+- **Refusals.** Outside cells, an unknown material and an unaffordable order are refused with both fingerprints unchanged.
+- **Floor under equipment.** Replacing the floor under a machine leaves the machine's state and position identical.
+- **Structure untouched.** No covering changes the slab's load capacity.
+- **Save/load.** Coverings and installations survive save, quit, relaunch and load with identical fingerprints.
+- **Property test.** Random orders keep the books balanced and every covered cell eligible.
 
 # Phase C — Tangible manufacturing vertical slice
 
@@ -548,7 +632,7 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 
 - [ ] Exercise saves with active machinery, staff movement, freight, pending contracts, loans, payroll, and market decisions; restart mid-operation.
 - [ ] Test migration of all supported save formats, rollback/backup recovery, forced-shutdown behavior, corruption detection, and import/export.
-- [ ] Expand Jest/fast-check and real-app Playwright suites to cover the specification's S01–S10 scenarios; enforce end-to-end accounting/stock/geometry/security invariants.
+- [ ] Expand Jest/fast-check and real-app Playwright suites to cover the specification's S01–S11 scenarios; enforce end-to-end accounting/stock/geometry/security invariants.
 - [ ] Add clean-install smoke tests and UI layout persistence tests, including multiwindow operation during running factories.
 
 **Acceptance gate:** Critical systems survive shutdown, restart, and upgrade without state loss or duplicated work. Automated suites pass; known failures are documented and resolved before the next step.
@@ -586,8 +670,8 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 **Build:**
 
 - [ ] Walk through every original-mechanics entry in the fidelity ledger: mark `IMPLEMENTED`, `RECONSTRUCTED`, `EXTENDED`, or an explicitly approved deviation. Resolve unfinished entries required for 1.0.
-- [ ] Re-run all S01–S10 specification scenarios, the full first-company workflow, multi-product/multi-machine operations, management delegation, marketplace/competitor activity, financial reporting, research, credit, property expansion, and multi-site supply flow.
-- [ ] Conduct a full interactive usability review of the cityscape, movable windows, simultaneous factory observation, readable reports, controls, and old-school business aesthetic.
+- [ ] Re-run all S01–S11 specification scenarios, the full first-company workflow, multi-product/multi-machine operations, management delegation, marketplace/competitor activity, financial reporting, research, credit, property expansion, and multi-site supply flow.
+- [ ] Conduct a full interactive usability review of the cityscape, movable windows, simultaneous factory observation, readable reports, controls, and old-school business aesthetic, confirming that every factory view and sprite is true top-down (D11).
 - [ ] Triage and resolve release-blocking crashes, save corruption, inventory/money creation, deadlocks, critical navigation failures, misleading output, and legal/packaging defects.
 - [ ] Set semantic version to `1.0.0`, tag the release, archive verified artifacts, and finish the release checklist and project documentation.
 
@@ -601,8 +685,8 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 - [ ] **Physical truth:** Inbound materials → receiving → internal transfer → machinery → WIP → storage → loading → dispatch can be followed by identity, location, quantity, worker/task, and ledger.
 - [ ] **Human truth:** Named employees have wages, skills, shifts, goals, tasks, physical presence, progression, supervisors, and auditable work histories; managers obey delegated powers.
 - [ ] **Economic truth:** Suppliers, buyers, competitors, prices, credit, labor, demand, and contracts are causally modeled and resource-bounded.
-- [ ] **Space truth:** Tiny properties and expansive factories have consistent real-world geometry, machine fit, routes, storage, and utility constraints.
-- [ ] **Presentation truth:** A cityscape and the original-inspired movable-window business desktop coexist with a living, inspectable factory in layout and operating views.
+- [ ] **Space truth:** Tiny properties and expansive factories have consistent real-world geometry, machine fit, routes, storage, and utility constraints, all in integer millimetres on one 500 mm grid, with floor coverings bought cell by cell at their exact area.
+- [ ] **Presentation truth:** A cityscape and the original-inspired movable-window business desktop coexist with a living, inspectable factory in layout and operating views, both true top-down.
 - [ ] **Engineering truth:** Deterministic tests, financial/stock invariants, migration tests, scenario tests, and Windows E2E packaging tests pass and can be reproduced.
 - [ ] **Ownership truth:** Original assets/code, third-party obligations, and acknowledgment of the historic game are accounted for under a deliberately selected license.
 - [ ] **Player truth:** From a fresh install, a player can establish a tiny business and expand toward multiple warehouses and factories through money, financing, physical resources, and a real marketplace—with no artificial level gates.

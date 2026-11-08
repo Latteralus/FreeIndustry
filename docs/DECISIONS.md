@@ -1310,7 +1310,8 @@ then contain another world).
 
 ## ADR-0042 — The cityscape and floor plans are SVG until the PixiJS renderer
 
-**Status:** Needs owner review · 2026-11-08 (Step 07)
+**Status:** Needs owner review · 2026-11-08 (Step 07). The "oblique view" mentioned below is
+superseded by ADR-0044: no oblique view will be built.
 
 Spec §4.1 and §11.3 name PixiJS as the factory and city renderer (`CityScene`), and the
 dependency is installed for Step 09. Step 07 draws the district site plans, the regional
@@ -1359,3 +1360,265 @@ Nothing here blocks `git push`, and there is no pre-push hook.
 
 Rejected: removing Husky and lint-staged. That drops two dependencies the spec names, and
 it loses the automatic formatting.
+
+## ADR-0044 — Factory interiors are drawn true top-down only
+
+**Status:** Accepted · 2026-11-08 (owner decision). It supersedes the oblique or three-quarter
+operating mode in spec §2 and §3.3 (2026-11-07 baseline), the "old-school
+oblique/three-quarter operating mode" task of plan Step 09, and the "2.5D oblique
+presentation" adaptation of ledger OR-03. It amends ADR-0042. Earlier text is kept and
+marked superseded, not erased.
+
+**Decision.** Every factory interior is drawn in a single **2D orthographic projection,
+looking straight down at 90°**. The player sees the floor as if from directly overhead.
+
+- **No other projections.** There is no isometric, oblique, three-quarter or perspective
+  projection, no tilted camera and no simulated 3D camera rotation. Sprites never show an
+  object from an angle: no side faces, no elevations, and no cast shadows that suggest an
+  angled view or a directional light.
+- **The camera can only pan and zoom.** Its whole state is a centre point in world
+  millimetres and a zoom step from a fixed ladder of pixels per metre (ADR-0042 uses
+  2.5–40). It has no tilt, pitch, yaw or rotation field and is always north-up. Zoom
+  changes only how many pixels stand for a metre, the same for every building.
+  World-to-screen is one affine map: screen = (world mm − camera centre) × scale + viewport
+  centre. Screen-to-world is its exact inverse, so selection is a plain point-in-footprint
+  test in millimetres.
+- **One projection in every mode.** Layout and construction, live operation, and inspection
+  all use the same projection and the same zoom ladder. They differ only in controls,
+  overlays, animation and what can be clicked. Switching modes keeps the camera where it is
+  and changes no world state (spec D09).
+- **Orientation belongs to objects.** Rotating a machine turns its footprint on the floor
+  (ADR-0045). It never moves the camera.
+- **Art is drawn for the overhead view.** Machinery, furniture, workers (head and
+  shoulders), forklifts, carts, pallets, racks, conveyors and stock are all drawn as seen
+  from above, at their real proportions, with neutral, non-directional shading. That way a
+  sprite turned through a quarter turn is still correct, and one drawing serves all four
+  orientations. **The footprint is authoritative.** Art is fitted to the physical footprint,
+  never the footprint to the art. A sprite's drawn extent equals the footprint it stands for.
+- **Height is shown as information, not by the projection.** Drawing order follows the layer
+  (ADR-0046) and then height above the floor: a pallet on forks is drawn above the forklift
+  body. Raised structures (mezzanines, crane rails, upper floors) are their own level or an
+  outline overlay. The view is never skewed to show them.
+- **Aesthetic.** The target is a realistic, restrained industrial look: a living
+  architectural floor plan with physically represented activity. Use practical industrial
+  colours, readable silhouettes, true proportions and enough surface detail to recognise a
+  machine and its process. Avoid cartoon exaggeration. Design law D06 (no decorative effects)
+  still applies.
+
+**City view.** District site plans and floor plans are already plan views drawn to a fixed
+scale (ADR-0042). They stay plan views whichever renderer draws them. ADR-0042's open
+question, whether the city stays SVG or moves to PixiJS, is unchanged.
+
+**Fidelity.** The original reportedly showed a three-quarter view while a turn ran (ledger
+OR-03, GF §5.3). FreeIndustry deliberately does not reproduce it. This is an approved
+deviation, recorded in the ledger. What it keeps is the experience of watching people and
+freight move through the plant, not the camera angle.
+
+**Why.** One projection gives exact hit tests and exact footprints on screen, and it never
+hides floor, ports or clearances behind tall objects. It halves the art (no second angle
+per object), needs no depth sorting of overlapping sprites, and matches the to-scale plans
+built in Step 07.
+
+**Rejected:** an oblique operating view beside a top-down layout view (the earlier spec):
+two drawings per object, depth sorting, ambiguous clicks on overlapping sprites, and
+footprints hidden behind machines. Isometric for every mode: it distorts dimensions and
+turns the construction grid into diamonds, so exact measurement on screen is lost. Free
+camera rotation: a north-up plan keeps walls, doors and labels stable, and the owner asked
+for pan and zoom only.
+
+## ADR-0045 — One physical coordinate system: integer millimetres, a 500 mm grid, a 250 mm placement lattice
+
+**Status:** Accepted · 2026-11-08 (owner decision; formalises spec §5.1–5.2 for Step 08)
+
+**Canonical units.** Every physical length and coordinate is an **integer number of
+millimetres** (a safe integer within the plan limit of `src/domain/geometry.ts`, currently
+1,000,000 mm). Exact areas are **`bigint` square millimetres**, never floating point.
+Feet, inches, metres and square feet exist only in display formatting
+(`src/renderer/app/units.ts`, the player's Units option; spec §12.3) and are never stored.
+Screen pixels, sprite sizes and tile counts are never authoritative. The simulation does not
+depend on screen resolution, frame rate, window size or camera position (spec D09). No
+building is ever scaled up or down to look like another (D05): at the same zoom, a garage is
+drawn smaller than a warehouse.
+
+**Facility frames.** Each level of a facility has a local floor frame. The origin is the
+minimum corner of the floor outline's bounds, x runs to the right and y down the screen, as
+in the Step 07 outlines. Every bundled outline already starts at (0, 0); Step 08 makes this a
+content validation rule. Levels share the building's origin and carry an elevation in mm, so
+the cells of a future upper floor lie directly above those below. District site positions
+(metres, ADR-0037) only place buildings on the city plan. They are not part of interior
+geometry.
+
+**Construction grid.** One world-wide constant, `CONSTRUCTION_GRID_MM = 500`: every building
+uses the same grid. Cell (col, row) of a level covers x ∈ [500·col, 500·col + 500) and
+y ∈ [500·row, 500·row + 500) mm, an area of 0.25 m², about 2.69 sq ft. A cell's identity is
+(property, level, col, row): integers derived from the coordinates. Cells are not stored as
+entities. A row exists only where a cell has state of its own, such as a floor covering
+(ADR-0046). Changing the grid pitch would be a rules and save-format change.
+
+**Usable floor and partial cells.**
+
+- The usable region of a level is its floor polygon minus structural columns, obstacles and
+  forbidden zones, all exact rectilinear polygons in mm (plan Step 08).
+- Usable area is the exact area of that region. It is never the cell count × 0.25 m², and
+  never the bounding box.
+- Each cell is **full** (inside the usable region), **partial** (0 < covered area <
+  250,000 mm²) or **outside** (covered area 0). A partial cell records its exact covered
+  area.
+- Only full and partial cells are eligible to be selected, customised or bought. Outside
+  cells, including cells entirely under a column, are not eligible.
+- Example: garage `hf-canal-2` is 3,000 × 5,800 mm, so it spans 6 × 12 = 72 cells. Its last
+  row is 300 mm deep: 6 partial cells of 150,000 mm² each. The usable area is 17.4 m², not
+  72 × 0.25 = 18 m².
+
+**Placement.**
+
+- **Footprints are exact.** Equipment, furniture, racks, conveyors and fixtures have
+  real-world footprints in integer mm from their catalog data. A 12 ft × 6 ft machine is
+  3,658 × 1,829 mm. Footprints are never rounded to whole cells or resized to fit tiles. An
+  object may stand on parts of several cells. Standing on a cell never changes that cell's
+  floor covering.
+- **The placement lattice is 250 mm.** A placed object's authoritative position is the
+  minimum corner of its rotated footprint, in integer mm, on the 250 mm lattice. Layout
+  mode snaps to the 500 mm grid by default and offers an optional 250 mm sub-grid. The
+  domain refuses positions off the lattice, so every position the game produces is
+  reproducible. A wall that is not on the lattice (the 5,800 mm garage) leaves a gap of less
+  than 250 mm. Snapping to walls would need its own ADR.
+- **Orientation is a quarter turn** about the vertical axis: 0°, 90°, 180° or 270°. A rotated
+  footprint stays an exact, axis-aligned integer rectangle, parallel to the rectilinear
+  walls. Arbitrary angles are rejected because they need irrational coordinates and inexact
+  collision tests. Revisit with an ADR if the owner wants them.
+- **Collision, fit, clearances, ports, maintenance areas, operator stations, walkways and
+  utility points are tested on exact millimetre geometry**, never on cell occupancy.
+- **Navigation.** Worker and vehicle positions are integer mm. A pathfinding graph (spec
+  §5.2) may use its own derived resolution, but it is rebuilt from the exact geometry and is
+  never the authority on where an object stands.
+
+**Rejected:** tile coordinates as the authority (cannot represent partial cells or real
+dimensions); a grid pitch per building (buildings would look inconsistent at the same zoom);
+anchoring the grid to the district plan (cell identities would depend on where a building
+stands in its district); placement at 500 mm only (too coarse to fit equipment into small
+garages); free 1 mm placement (endless near-identical positions and ragged layouts, with no
+gain at 250 mm resolution).
+
+## ADR-0046 — Floor coverings: a separate per-cell layer, data-driven, bought through the books
+
+**Status:** Accepted · 2026-11-08 (owner decision) for the layer model, data architecture and
+development path. The four points marked **Owner review** are recommended defaults and need
+the owner's confirmation before Step 09A. Data model: Step 08. Rendering: Step 09.
+Purchasing and editing: Step 09A.
+
+**Layers.** A factory consists of six conceptual layers:
+
+1. **Structure.** Property geometry and fixed structure: outline, walls, columns, forbidden
+   zones, doors, docks, levels and the **slab**, with its structural load capacity
+   (`floorLoadKgPerM2`, already a property fact, ADR-0037).
+2. **Floor covering.** One material per eligible 500 mm cell.
+3. **Construction grid and editing overlays.** Derived and never stored. The grid can be
+   shown or hidden at will.
+4. **Placed objects.** Machinery, furniture, equipment and storage.
+5. **Moving objects.** Workers, vehicles, stock and other things that move.
+6. **Selection and feedback.** Selection marks, operating feedback and inspection overlays.
+
+Layers 1, 2, 4 and 5 are authoritative world state. Layers 3 and 6 are presentation only.
+The model fixes what is independent of what. It does not prescribe six PixiJS containers.
+Changing a covering never deletes, moves or resets anything in layers 4–5. Moving or
+removing equipment never changes a covering.
+
+**Structure is not covering.** Load capacity belongs to the slab. A covering never changes
+it: steel plate does not make a floor stronger. Functional covering properties (slip
+resistance, durability, wear, cleaning, suitability for a process) may appear in the
+material schema as optional fields. They have no effect until a step gives them a rule and
+an ADR. None are planned now.
+
+**Construction grid versus decorative pattern.** The grid is always 500 mm. A material's
+visible pattern is its own: seamless epoxy looks nearly continuous, while steel plates or
+concrete bays show strong joints at their own module (for example 1,000 × 2,000 mm). The
+pattern is drawn in world coordinates, so joints line up across cells. Aisle lines narrower
+than a cell are not coverings. They belong to zones (plan Step 15).
+
+**Material catalog** (`content/floor-materials/`, data only, Zod-validated by
+`check:content`). Each material has a stable ID, name and category (concrete, polished
+concrete, painted concrete, epoxy, steel plate, diamond plate, anti-slip, safety and hazard
+marking, office), an **installation price per m²** in integer cents, a **removal price per m²**
+in integer cents (charged when a cell of this material is replaced), a texture set with
+variants and the pattern module, and the optional inert functional fields. Adding a material
+is a content change, not a code change.
+
+**Starting surface.** Every property listing names its existing surface, a material ID
+(normally standard concrete, worn concrete for the old buildings). A new lease starts with
+every eligible cell in that surface, at no cost.
+
+**State and saves.** Coverings belong to the **property**, as a physical fact of the building.
+Who paid is recorded on the installation.
+
+- Each property and level keeps a sparse map from cell to material and installation. A cell
+  missing from the map has the starting surface, so a plain 21,600-cell floor stores no rows.
+- Save format (the next format number when Step 08 adds the data):
+  `floor_cell_coverings(property_id, level, col, row, material_id, installation_id)` with
+  primary key (property, level, col, row), and
+  `floor_covering_installations(id, property_id, firm_id, game_time_ms, kind, cells, area_mm2, cost_cents, journal_entry_id)`.
+  Both are fingerprinted.
+- Invariants: every covered cell is eligible, every material is known, and every installation
+  balances to its journal entry.
+
+**Buying and installing** (plan Step 09A).
+
+- **Quoting.** A read-only request returns the cost of a proposed change. The layout tools
+  preview the material locally before purchase. Previews are renderer state and never
+  authoritative (spec §4.2).
+- **Ordering.** One validated, idempotent command,
+  `facility.installFloorCovering({ propertyId, level, materialId, rectangles })`. The
+  rectangles are in cell coordinates, so a whole floor fits in one command. The command is
+  refused, with nothing changed, if the company does not hold the property, a cell is not
+  eligible, the material is unknown, or the funds do not cover the cost (with the figures).
+  Cells already in the chosen material are skipped and not charged.
+- **Cost.** The covered area is exact, so partial cells are charged only for their covered
+  area. Initial installation is a cell going from its starting surface to a new material:
+  installation price × area. Replacement is a cell going from an installed material to
+  another: removal price of the old material plus installation price of the new, posted as
+  separate lines. All sums are `bigint`, rounded half-up to whole cents once per order.
+- **Books.** One balanced journal entry per order, keyed by the command (ADR-0031), with the
+  installation and removal components distinguishable in the books and in the installation
+  record.
+- **Selection tools.** A single cell, a rectangle, the whole level, and a **fill**: the
+  4-connected region of eligible cells with the same covering as the starting cell, bounded
+  by the usable floor. The fill is computed for the preview, and the command then carries
+  explicit rectangles that the worker validates again. "A whole room" is the fill until rooms
+  and zones exist (Step 15).
+
+**Owner review (recommended defaults):**
+
+1. **Timing.** Installation completes at the moment of the order, done by an outside
+   contractor with no company staff. Alternative: a scheduled contractor job with a duration
+   and an area that is out of use meanwhile.
+2. **Under equipment.** Replacing the covering under installed equipment is allowed and
+   leaves the equipment exactly as it was. Alternatives: require the area to be clear, or
+   charge a surcharge or downtime.
+3. **Accounting.** Installation is capitalised as a leasehold improvement (an asset;
+   depreciation over the remaining lease term from Step 18), and removal charges are an
+   expense. Alternative: expense everything.
+4. **End of lease.** Coverings stay with the building when a lease ends, and any
+   undepreciated balance is written off then. A property relet later keeps them.
+
+**Rendering** (plan Step 09).
+
+- Coverings are drawn in **chunks** of cells, for example 16 × 16, each cached as one texture
+  or mesh per level of detail. Only visible chunks are drawn (viewport culling). A change
+  redraws only the chunks whose cells changed.
+- There is never a React element per cell, and never a PixiJS display object per cell at
+  ordinary zooms.
+- Texture variants are chosen by a fixed hash of the cell coordinates, so they are stable
+  between frames and runs without using the simulation's random streams.
+- At low zoom a material is drawn as its average colour; texture detail appears as the view
+  zooms in.
+- The grid overlay is drawn per visible chunk, on exact cell boundaries at every zoom.
+
+**Fidelity.** No evidence shows the original offered floor coverings. They are `EXTENDED`
+(ledger OR-86).
+
+**Rejected:** coverings as properties of placed objects (replacing a floor would touch
+machines); a dense per-cell table (tens of thousands of identical rows per building);
+coverings that raise structural load (would let decoration change physics); purchase as a
+renderer action or a cosmetic purchase that bypasses the books (spec §4.2, D02 spirit);
+folding the purchase workflow into Step 08 (it needs the renderer's selection tools from
+Step 09).
