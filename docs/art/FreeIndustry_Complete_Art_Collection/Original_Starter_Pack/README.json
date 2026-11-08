@@ -1,0 +1,63 @@
+{
+  "project": "FreeIndustry",
+  "purpose": "Prototype / temporary art samples extracted from an AI-generated concept sheet",
+  "projection": "strict overhead / orthographic",
+  "unit": "millimeters",
+  "grid_size_mm": 500,
+  "important_limitations": [
+    "Concept art, not calibrated to real-world equipment footprints. Set sprite width/height in PixiJS from authoritative mm dimensions.",
+    "Floor texture tiles are visual samples; not verified as perfectly seamless.",
+    "Transparent sprite cutouts are approximate; manually clean mask edges for production.",
+    "Overlay icons are decorative sample imagery; compute actual interaction zones from simulation data."
+  ],
+  "source": "a_clean_highly_detailed_top_down_orthographic_ass.png",
+  "sprites": {
+    "machines": [
+      "air_compressor.png",
+      "cnc_mill.png",
+      "drying_oven.png",
+      "stamping_press.png",
+      "wood_stainer.png"
+    ],
+    "floor": [
+      "concrete_polished.png",
+      "concrete_standard.png",
+      "concrete_worn.png",
+      "diamond_plate.png",
+      "epoxy_gray.png",
+      "epoxy_green.png",
+      "hazard_stripes.png",
+      "office_tile.png",
+      "paint_safety_yellow.png",
+      "steel_grate.png"
+    ],
+    "people": [
+      "maintenance_gray.png",
+      "operator_blue.png",
+      "supervisor_yellow.png",
+      "technician_green.png",
+      "worker_orange.png"
+    ],
+    "materials": [
+      "boxed_parts.png",
+      "drums.png",
+      "liquid_tote.png",
+      "lumber_raw.png",
+      "lumber_stained.png",
+      "metal_stock.png"
+    ],
+    "conveyors": [
+      "curve_90.png",
+      "powered_roller.png",
+      "straight_roller.png"
+    ],
+    "overlays": [
+      "input_zone.png",
+      "keep_clear.png",
+      "operator_zone.png",
+      "output_zone.png",
+      "refill_zone.png",
+      "service_zone.png"
+    ]
+  }
+}
