@@ -1,2 +1,24 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize text files to LF in the repository and in every working tree, so
+# Prettier (endOfLine: lf) passes on a clean Windows checkout regardless of
+# core.autocrlf.
+* text=auto eol=lf
+
+# Windows scripts keep CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets.
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.gif binary
+*.webp binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.woff2 binary
+*.node binary
+*.db binary
+*.sqlite binary

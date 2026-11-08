@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Umbrella project for the editor and ESLint. Process boundaries are enforced by tsconfig.node.json, tsconfig.web.json and tsconfig.test.json (see `npm run typecheck`).",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "jest", "vite/client"]
+  },
+  "include": [
+    "*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "scripts/**/*.ts"
+  ]
+}

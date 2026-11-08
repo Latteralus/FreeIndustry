@@ -1,13 +1,14 @@
 # Industrial Business Simulation "FreeIndustry"
+
 ## Technical Architecture & Gameplay Systems Specification
 
-**Project designation:** Independent modern spiritual successor to *Free Enterpri$e / Free Enterprise* (Tsunami Media, 1996)  
+**Project designation:** Independent modern spiritual successor to _Free Enterpri$e / Free Enterprise_ (Tsunami Media, 1996)  
 **Document status:** Architecture and requirements baseline  
 **Target platform:** Windows desktop, offline single-player  
 **Primary stack:** Electron + TypeScript + PixiJS + React + SQLite  
 **Development audience:** Human project owner and AI coding agents working in VS Code
 
-> **Project mandate:** Reproduce the **mechanical character and desktop workflow** of the original *Free Enterprise* as faithfully as practical, with fully original code, art, sound, text, and branding. Modernization should remove technical limits and deepen simulation, **not** replace the original's sober, information-dense 1990s industrial-business identity with flashy game UI. This is a business simulation first.
+> **Project mandate:** Reproduce the **mechanical character and desktop workflow** of the original _Free Enterprise_ as faithfully as practical, with fully original code, art, sound, text, and branding. Modernization should remove technical limits and deepen simulation, **not** replace the original's sober, information-dense 1990s industrial-business identity with flashy game UI. This is a business simulation first.
 
 > **Scope discipline:** This specification intentionally contains **no development timelines or release schedule**. Implementation order may follow dependencies, but estimates and deadlines are excluded.
 
@@ -57,31 +58,31 @@ The experience should feel like operating a real enterprise from a Windows-era m
 
 The original game's known mechanics are drawn from contemporary/retrospective descriptions and a community walkthrough, not an authoritative recovered source tree. Details should be verified against legitimate gameplay captures where possible. **“Original documented” does not mean that we possess the original algorithm.**
 
-| Original feature (documented) | Preservation requirement | Modern implementation policy |
-| --- | --- | --- |
-| Select a U.S. city and inspect industrial buildings with size, rent, and businesses | Retain | Persistent cityscape, real buildings and competitors; additional garage/small-workspace properties |
-| Choose buildings and products using local market information | Retain | Industry/product discovery from real marketplace records, not fixed scripted prices |
-| Top-down factory layout, then operating/three-quarter viewing | Retain | Editable top-down mode and separate live-observation rendering modes |
-| Menubar, toolbars, bottom status bar, floating management dialogs | Retain closely | Classic desktop window manager within Electron renderer, saved per-workspace layout |
-| Machinery, offices, conveyors, storage zones, carts, forklifts, safety and break areas | Retain | Spatially coherent equipment components and physical movement capabilities |
-| Job advertisements, applicants, wages, job-fit, assignments | Retain | Persistent named candidates, worker skills, contracts, reviews, schedules |
-| Purchasing agents, salespeople, accountants, supervisors, researchers | Retain | Automatic work arising from explicit policies and actual staff/task capacity |
-| Price / Quality / Value purchase guidelines and configurable sales prices | Retain | Supplier scoring policies, price limits, quality thresholds, approval rules |
-| Employees working, moving, taking breaks, producing history reports | Retain | Simulated tasks, needs, on-site positions, and event histories |
-| Company and industry reports, consultant research, rivals and rankings | Retain | Auditable accounting, market intelligence with information quality and cost |
-| Bank checking/savings, loans and initial financing choices | Retain | Double-entry accounting, deposits, credit terms, repayment and insolvency |
-| R&D, product evolution, upgrades and market obsolescence | Retain | Data-driven technologies, recipes, research effort, market adoption and depreciation |
-| Turn duration selection and accelerated viewing | Retain the *planning/observing experience* | Continuous deterministic sim with pause/resume and adjustable speed; no uninterruptible long turns |
-| Transactions, customers and supplier interactions | Retain | Explicit offers, orders, deliveries, invoices; **negotiated contracts and approvals are extensions**, not claimed as historically identical |
-| Expansion and competition | Retain and deepen | Multiple owned/leased facilities, real estate market, competing firms with bounded finances/capacity |
+| Original feature (documented)                                                          | Preservation requirement                   | Modern implementation policy                                                                                                                |
+| -------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Select a U.S. city and inspect industrial buildings with size, rent, and businesses    | Retain                                     | Persistent cityscape, real buildings and competitors; additional garage/small-workspace properties                                          |
+| Choose buildings and products using local market information                           | Retain                                     | Industry/product discovery from real marketplace records, not fixed scripted prices                                                         |
+| Top-down factory layout, then operating/three-quarter viewing                          | Retain                                     | Editable top-down mode and separate live-observation rendering modes                                                                        |
+| Menubar, toolbars, bottom status bar, floating management dialogs                      | Retain closely                             | Classic desktop window manager within Electron renderer, saved per-workspace layout                                                         |
+| Machinery, offices, conveyors, storage zones, carts, forklifts, safety and break areas | Retain                                     | Spatially coherent equipment components and physical movement capabilities                                                                  |
+| Job advertisements, applicants, wages, job-fit, assignments                            | Retain                                     | Persistent named candidates, worker skills, contracts, reviews, schedules                                                                   |
+| Purchasing agents, salespeople, accountants, supervisors, researchers                  | Retain                                     | Automatic work arising from explicit policies and actual staff/task capacity                                                                |
+| Price / Quality / Value purchase guidelines and configurable sales prices              | Retain                                     | Supplier scoring policies, price limits, quality thresholds, approval rules                                                                 |
+| Employees working, moving, taking breaks, producing history reports                    | Retain                                     | Simulated tasks, needs, on-site positions, and event histories                                                                              |
+| Company and industry reports, consultant research, rivals and rankings                 | Retain                                     | Auditable accounting, market intelligence with information quality and cost                                                                 |
+| Bank checking/savings, loans and initial financing choices                             | Retain                                     | Double-entry accounting, deposits, credit terms, repayment and insolvency                                                                   |
+| R&D, product evolution, upgrades and market obsolescence                               | Retain                                     | Data-driven technologies, recipes, research effort, market adoption and depreciation                                                        |
+| Turn duration selection and accelerated viewing                                        | Retain the _planning/observing experience_ | Continuous deterministic sim with pause/resume and adjustable speed; no uninterruptible long turns                                          |
+| Transactions, customers and supplier interactions                                      | Retain                                     | Explicit offers, orders, deliveries, invoices; **negotiated contracts and approvals are extensions**, not claimed as historically identical |
+| Expansion and competition                                                              | Retain and deepen                          | Multiple owned/leased facilities, real estate market, competing firms with bounded finances/capacity                                        |
 
 **Important original-game delegation finding:** Accounts describe assigned purchasing staff buying under player policies, sales staff marketing/selling output, and accounting/administrative staff carrying out office work; the player sets purchasing guidelines and product prices. This is the pattern to reproduce. Formal negotiated customer contracts and detailed manager spending limits are specified **new extensions**, because the consulted walkthrough does not establish their original behavior.
 
 Source references (consulted 2026-11-07):
 
-1. [GameFAQs: *Free Enterprise* walkthrough by Playbahnosh (2005)](https://gamefaqs.gamespot.com/pc/197389-free-enterprise/faqs/38554) — starting city, floor layout, worker roles, purchasing policies, research, modes, and live operations.
-2. [MobyGames: *Free Enterprise* game page](https://www.mobygames.com/game/2408/free-enterprise/) — developer, 1996 release, product range, and high-level mechanics.
-3. [Old-Games: *Free Enterpri$e* retrospective](https://www.old-games.com/download/4268/free-enterpri-e-a-k) — managerial employees, morale, financial operations, and turn model.
+1. [GameFAQs: _Free Enterprise_ walkthrough by Playbahnosh (2005)](https://gamefaqs.gamespot.com/pc/197389-free-enterprise/faqs/38554) — starting city, floor layout, worker roles, purchasing policies, research, modes, and live operations.
+2. [MobyGames: _Free Enterprise_ game page](https://www.mobygames.com/game/2408/free-enterprise/) — developer, 1996 release, product range, and high-level mechanics.
+3. [Old-Games: _Free Enterpri$e_ retrospective](https://www.old-games.com/download/4268/free-enterpri-e-a-k) — managerial employees, morale, financial operations, and turn model.
 4. [MobyGames screenshots](https://www.mobygames.com/game/2408/free-enterprise/screenshots/) — historical UI evidence.
 5. [GameSpot review](https://www.gamespot.com/reviews/free-enterprise-review/1900-2536117/) — historical critical perspective on realism and original limitations; do not reproduce those limitations as features.
 
@@ -152,18 +153,18 @@ Every major object has an inspectable record: employee, machine, physical stock,
 
 ### 4.1 Technology decisions
 
-| Layer | Technology | Responsibility |
-| --- | --- | --- |
-| Desktop host | Electron | Native window, filesystem, dialogs, packaging, application lifecycle |
-| UI and classic window manager | React + TypeScript | Menus, floating dialogs, forms, employee lists, financial reports |
-| Factory/city renderer | PixiJS (v8-compatible API) | 2D sprites, viewport camera, selection, spatial overlays, animation |
-| Application tooling | electron-vite + Vite | Build and HMR for main/preload/renderer; Windows desktop packaging |
-| Simulation | Strict TypeScript, isolated worker thread | Event queue, workers, production, logistics, market, finance, competitors |
-| Data store | SQLite via `better-sqlite3` | Save snapshots, transactions, scenario/catalog data, audited history |
-| IPC contract | Electron `contextBridge` + validated commands | Narrow renderer-to-simulation interface; no direct Node/DB in UI |
-| Schema validation | Zod | External content, commands, DTOs, save compatibility boundaries |
-| Test/quality | Jest, ts-jest, Testing Library, Playwright, fast-check, ESLint, Prettier | Logic tests, UI tests, real app smoke tests, invariants and style |
-| Installer | electron-builder | Windows packaging, native module rebuild, distribution |
+| Layer                         | Technology                                                               | Responsibility                                                            |
+| ----------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| Desktop host                  | Electron                                                                 | Native window, filesystem, dialogs, packaging, application lifecycle      |
+| UI and classic window manager | React + TypeScript                                                       | Menus, floating dialogs, forms, employee lists, financial reports         |
+| Factory/city renderer         | PixiJS (v8-compatible API)                                               | 2D sprites, viewport camera, selection, spatial overlays, animation       |
+| Application tooling           | electron-vite + Vite                                                     | Build and HMR for main/preload/renderer; Windows desktop packaging        |
+| Simulation                    | Strict TypeScript, isolated worker thread                                | Event queue, workers, production, logistics, market, finance, competitors |
+| Data store                    | SQLite via `better-sqlite3`                                              | Save snapshots, transactions, scenario/catalog data, audited history      |
+| IPC contract                  | Electron `contextBridge` + validated commands                            | Narrow renderer-to-simulation interface; no direct Node/DB in UI          |
+| Schema validation             | Zod                                                                      | External content, commands, DTOs, save compatibility boundaries           |
+| Test/quality                  | Jest, ts-jest, Testing Library, Playwright, fast-check, ESLint, Prettier | Logic tests, UI tests, real app smoke tests, invariants and style         |
+| Installer                     | electron-builder                                                         | Windows packaging, native module rebuild, distribution                    |
 
 Use **WebGL renderer** as the PixiJS production preference, with a documented fallback strategy. The simulation runs independently of rendering and can be executed in Node/Jest without Electron or a graphics context.
 
@@ -401,11 +402,11 @@ interface StockTransferCommand {
 
 interface SimulationEvent {
   id: string;
-  timeMs: bigint;          // simulated milliseconds since scenario epoch
+  timeMs: bigint; // simulated milliseconds since scenario epoch
   priority: number;
-  sequence: bigint;        // stable event ordering
+  sequence: bigint; // stable event ordering
   type: string;
-  payload: unknown;       // validated via event-specific Zod schema
+  payload: unknown; // validated via event-specific Zod schema
 }
 ```
 
@@ -427,20 +428,20 @@ Use `better-sqlite3` only in the worker/native Node context, never in the unpriv
 
 ### 10.2 Core relational schema (logical baseline)
 
-| Table / group | Role and primary relationships |
-| --- | --- |
-| `worlds`, `world_metadata`, `schema_migrations` | World identity, seed, content/version, integrity, migration version |
-| `cities`, `districts`, `parcels`, `properties`, `facility_floors`, `floor_obstacles`, `dock_points` | Real estate, true physical geometry, occupancy and transport access |
-| `firms`, `firm_facilities`, `ownerships`, `leases`, `bank_accounts`, `loans` | Companies, capital, leases and borrowing |
-| `people`, `employment`, `roles`, `skills`, `employee_skill_levels`, `shifts`, `attendance` | Persistent staff and labor conditions |
-| `workstations`, `machine_instances`, `machine_ports`, `machine_capabilities`, `machine_state` | Manufacturing equipment and physical operating stations |
-| `products`, `recipes`, `recipe_inputs`, `recipe_outputs`, `technologies`, `research_projects` | Manufacturing definitions and research |
-| `locations`, `stock_lots`, `serialized_items`, `load_units`, `lot_contents`, `stock_movements`, `stock_reservations` | Physical goods and provenance |
-| `work_orders`, `tasks`, `task_assignments`, `task_events`, `machine_runs`, `quality_inspections` | Operations, task states and output verification |
-| `market_offers`, `rfqs`, `quotes`, `contracts`, `contract_lines`, `purchase_orders`, `sales_orders`, `shipments`, `invoices` | Commercial actions and deliveries |
-| `ledger_accounts`, `journal_entries`, `journal_lines`, `payment_allocations`, `inventory_cost_layers` | Double-entry accounting and cost basis |
-| `manager_policies`, `delegation_limits`, `approvals`, `memos`, `audit_events` | Player control, staff automation and transparency |
-| `simulation_events`, `world_snapshots`, `command_log`, `render_projections`, `save_metadata` | Deterministic replay, resumability, indexed view data |
+| Table / group                                                                                                                | Role and primary relationships                                      |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `worlds`, `world_metadata`, `schema_migrations`                                                                              | World identity, seed, content/version, integrity, migration version |
+| `cities`, `districts`, `parcels`, `properties`, `facility_floors`, `floor_obstacles`, `dock_points`                          | Real estate, true physical geometry, occupancy and transport access |
+| `firms`, `firm_facilities`, `ownerships`, `leases`, `bank_accounts`, `loans`                                                 | Companies, capital, leases and borrowing                            |
+| `people`, `employment`, `roles`, `skills`, `employee_skill_levels`, `shifts`, `attendance`                                   | Persistent staff and labor conditions                               |
+| `workstations`, `machine_instances`, `machine_ports`, `machine_capabilities`, `machine_state`                                | Manufacturing equipment and physical operating stations             |
+| `products`, `recipes`, `recipe_inputs`, `recipe_outputs`, `technologies`, `research_projects`                                | Manufacturing definitions and research                              |
+| `locations`, `stock_lots`, `serialized_items`, `load_units`, `lot_contents`, `stock_movements`, `stock_reservations`         | Physical goods and provenance                                       |
+| `work_orders`, `tasks`, `task_assignments`, `task_events`, `machine_runs`, `quality_inspections`                             | Operations, task states and output verification                     |
+| `market_offers`, `rfqs`, `quotes`, `contracts`, `contract_lines`, `purchase_orders`, `sales_orders`, `shipments`, `invoices` | Commercial actions and deliveries                                   |
+| `ledger_accounts`, `journal_entries`, `journal_lines`, `payment_allocations`, `inventory_cost_layers`                        | Double-entry accounting and cost basis                              |
+| `manager_policies`, `delegation_limits`, `approvals`, `memos`, `audit_events`                                                | Player control, staff automation and transparency                   |
+| `simulation_events`, `world_snapshots`, `command_log`, `render_projections`, `save_metadata`                                 | Deterministic replay, resumability, indexed view data               |
 
 Use stable UUID/ULID-like IDs (or deterministic sequence-based IDs during simulation), foreign keys, explicit units, and schema migration guards. Never store core simulation state only as an opaque JSON blob. JSON columns can hold versioned details, but financial, inventory, people, and contract relationships should remain queryable.
 
@@ -514,11 +515,19 @@ CREATE TABLE journal_lines (
 type Id = string;
 type MoneyCents = bigint;
 type QuantityMicro = bigint;
-type Millimeters = number;       // bounded safe integer
+type Millimeters = number; // bounded safe integer
 
 type MachineState =
-  | 'idle' | 'reserved' | 'loading' | 'setup' | 'processing'
-  | 'unloading' | 'blocked' | 'broken' | 'maintenance' | 'unpowered';
+  | 'idle'
+  | 'reserved'
+  | 'loading'
+  | 'setup'
+  | 'processing'
+  | 'unloading'
+  | 'blocked'
+  | 'broken'
+  | 'maintenance'
+  | 'unpowered';
 
 interface FacilityGeometry {
   id: Id;
@@ -739,6 +748,7 @@ npm run test
 
 ```md
 # Project engineering rules
+
 - Treat docs/TechnicalDocument.md as the requirements authority.
 - Preserve Free Enterprise's sober 1990s factory/business management feel.
 - Do not replace real simulation logic with visual-only approximations.
@@ -763,20 +773,20 @@ npm run test
 
 ### 14.1 High-priority property tests
 
-| Invariant | Required verification |
-| --- | --- |
-| Material conservation | For each transformation, input = output + scrap/loss according to recipe units; no negative stock |
-| Physical provenance | Each lot's origin, current load unit/location and complete movement sequence can be reconstructed |
-| Capacity | No machine, pallet, shelf, dock, building, or vehicle exceeds stated area/volume/weight/cycle capacity |
-| Staff reality | No staff member performs two overlapping tasks, works while absent, or moves impossibly |
-| Money and ledgers | Every journal balances, no double payment, credit limits respected, bank balances reconcile |
-| Orders and shipping | A customer order cannot ship more accepted goods than actually staged/loaded |
-| Contracts and delegation | No manager spends beyond authority; player overrides apply to subsequent actions |
-| Geometry | A facility always renders at a fixed scale derived from real coordinates and cannot contain equipment outside floor bounds |
-| Determinism | Same seed + state + command log results in identical state hash, despite FPS/window changes |
-| Persistence | Save/load during active machinery, transit, payroll and pending orders yields identical continuation |
-| Competitor constraints | AI firms cannot produce without inputs, capacity, working capital and staff/aggregate labor |
-| UI integrity | Closing or moving windows never changes factory outcomes or loses pending approved commands |
+| Invariant                | Required verification                                                                                                      |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Material conservation    | For each transformation, input = output + scrap/loss according to recipe units; no negative stock                          |
+| Physical provenance      | Each lot's origin, current load unit/location and complete movement sequence can be reconstructed                          |
+| Capacity                 | No machine, pallet, shelf, dock, building, or vehicle exceeds stated area/volume/weight/cycle capacity                     |
+| Staff reality            | No staff member performs two overlapping tasks, works while absent, or moves impossibly                                    |
+| Money and ledgers        | Every journal balances, no double payment, credit limits respected, bank balances reconcile                                |
+| Orders and shipping      | A customer order cannot ship more accepted goods than actually staged/loaded                                               |
+| Contracts and delegation | No manager spends beyond authority; player overrides apply to subsequent actions                                           |
+| Geometry                 | A facility always renders at a fixed scale derived from real coordinates and cannot contain equipment outside floor bounds |
+| Determinism              | Same seed + state + command log results in identical state hash, despite FPS/window changes                                |
+| Persistence              | Save/load during active machinery, transit, payroll and pending orders yields identical continuation                       |
+| Competitor constraints   | AI firms cannot produce without inputs, capacity, working capital and staff/aggregate labor                                |
+| UI integrity             | Closing or moving windows never changes factory outcomes or loses pending approved commands                                |
 
 ### 14.2 Scenario tests
 

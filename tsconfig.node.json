@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "electron.vite.config.ts",
+    "playwright.config.ts",
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "src/worker/**/*.ts",
+    "src/domain/**/*.ts",
+    "src/simulation/**/*.ts",
+    "src/persistence/**/*.ts",
+    "src/catalog/**/*.ts",
+    "src/shared/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+}

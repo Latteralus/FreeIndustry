@@ -1,0 +1,66 @@
+/* Deliberately plain, hard-edged, muted desktop styling (spec §3.2, design law D06). */
+:root {
+  --shell-bg: #808080;
+  --shell-face: #c0c0c0;
+  --shell-highlight: #ffffff;
+  --shell-shadow: #404040;
+  --shell-title: #1f3a5a;
+  --shell-title-text: #ffffff;
+  --shell-text: #000000;
+  font-family: Tahoma, 'Segoe UI', Verdana, sans-serif;
+  font-size: 12px;
+  color: var(--shell-text);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--shell-bg);
+}
+
+.shell-titlebar {
+  padding: 3px 6px;
+  background: var(--shell-title);
+  color: var(--shell-title-text);
+  font-weight: bold;
+}
+
+.shell-workspace {
+  flex: 1;
+  padding: 16px;
+}
+
+.shell-notice {
+  max-width: 420px;
+  padding: 8px 12px;
+  background: var(--shell-face);
+  border: 2px solid;
+  border-color: var(--shell-highlight) var(--shell-shadow) var(--shell-shadow)
+    var(--shell-highlight);
+}
+
+.shell-notice h1 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.shell-notice p {
+  margin: 0;
+}
+
+.shell-statusbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 6px;
+  background: var(--shell-face);
+  border-top: 1px solid var(--shell-highlight);
+}

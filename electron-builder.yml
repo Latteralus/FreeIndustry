@@ -1,0 +1,22 @@
+# Authoritative packaging configuration (specification §13.1).
+appId: com.freeindustry.app
+productName: FreeIndustry
+copyright: Copyright © FreeIndustry contributors
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+asar: true
+# better-sqlite3 ships a Node-API native addon; it must live outside the ASAR.
+asarUnpack:
+  - '**/*.node'
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
