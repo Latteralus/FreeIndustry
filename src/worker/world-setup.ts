@@ -3,12 +3,15 @@ import type { JsonValue } from '../shared/canonical-json';
 import type { ScenarioSummary } from '../shared/ipc/real-estate';
 import type { CivilDate } from '../domain/time';
 import { realEstateFor, type ContentCatalog } from '../catalog/content-schema';
+import { encodeFacilities } from '../simulation/facilities-codec';
 import { encodeRealEstate } from '../simulation/real-estate-codec';
 
 /**
  * How the worker turns a scenario of the content catalog into a new world
  * (ADR-0037): the scenario's epoch for the kernel, and the world setup — the
- * real estate as plain JSON, copied into the world's state by the rules.
+ * real estate and, from Step 08, the facilities (building structure, floor
+ * materials, equipment catalog) as plain JSON, copied into the world's state
+ * by the rules.
  */
 
 export interface WorldSetup {
@@ -26,7 +29,10 @@ export function worldSetupFor(catalog: ContentCatalog, scenarioId: string): Worl
   return {
     scenarioId,
     epoch: scenario.epoch,
-    setup: encodeRealEstate(realEstateFor(catalog, scenario)),
+    setup: {
+      realEstate: encodeRealEstate(realEstateFor(catalog, scenario)),
+      facilities: encodeFacilities(catalog.facilities),
+    },
   };
 }
 

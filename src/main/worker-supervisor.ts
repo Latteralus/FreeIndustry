@@ -14,6 +14,11 @@ import {
   type WorldSnapshot,
 } from '../shared/ipc/contract';
 import type { ClockControl } from '../shared/ipc/clock';
+import {
+  queryResultSchema,
+  type QueryResult,
+  type SimulationQuery,
+} from '../shared/ipc/facilities';
 import type { NewWorldRequest } from '../shared/ipc/real-estate';
 import {
   saveListSchema,
@@ -155,6 +160,11 @@ export class WorkerSupervisor {
 
   submitCommand(envelope: CommandEnvelope): Promise<IpcResult<CommandReceipt>> {
     return this.#request({ kind: 'submitCommand', envelope }, commandReceiptSchema);
+  }
+
+  /** A read-only question about the world (ADR-0050). */
+  query(query: SimulationQuery): Promise<IpcResult<QueryResult>> {
+    return this.#request({ kind: 'query', query }, queryResultSchema);
   }
 
   /** Clock control (pause, speed, targeted advance); answered with a world snapshot. */

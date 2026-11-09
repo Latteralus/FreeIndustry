@@ -39,15 +39,19 @@ export interface Account {
   readonly type: AccountType;
 }
 
+const ACCOUNT_CODE = /^[0-9]{4}$/;
+
 /** The accounts the business rules post to by role. */
 export const ACCOUNT = {
   cash: '1010',
   receivables: '1100',
   depositsPaid: '1400',
+  machinery: '1500',
   payables: '2000',
   ownerCapital: '3000',
   sales: '4000',
   rent: '6100',
+  equipmentRigging: '6200',
 } as const satisfies Record<string, AccountCode>;
 
 /**
@@ -65,6 +69,39 @@ export const STANDARD_CHART: readonly Account[] = [
   { code: ACCOUNT.sales, name: 'Sales', type: 'revenue' },
   { code: ACCOUNT.rent, name: 'Rent expense', type: 'expense' },
 ];
+
+/**
+ * Accounts a company opens the first time a rule posts to them, rather than
+ * at founding, so the books of companies founded before a rule existed stay
+ * exactly as they were (Step 08, ADR-0048).
+ */
+export const EQUIPMENT_ACCOUNTS = {
+  machinery: { code: ACCOUNT.machinery, name: 'Machinery and equipment', type: 'asset' },
+  rigging: {
+    code: ACCOUNT.equipmentRigging,
+    name: 'Equipment installation and relocation',
+    type: 'expense',
+  },
+} as const satisfies Record<string, Account>;
+
+/**
+ * The ledger with `account` in its chart: unchanged if it is there already,
+ * otherwise with the account appended at a zero balance. A code already used
+ * by a different account is a bug.
+ */
+export function ensureAccount(ledger: Ledger, account: Account): Ledger {
+  const existing = ledger.accounts.find((candidate) => candidate.code === account.code);
+  if (existing) {
+    if (existing.name !== account.name || existing.type !== account.type) {
+      throw new Error(`Account ${account.code} is already ${existing.name}`);
+    }
+    return ledger;
+  }
+  if (!ACCOUNT_CODE.test(account.code)) {
+    throw new Error(`Invalid account code ${account.code}`);
+  }
+  return { ...ledger, accounts: [...ledger.accounts, { ...account, balanceCents: 0n }] };
+}
 
 /** Control accounts are moved only by invoices and payments, never by an invoice line. */
 export const CONTROL_ACCOUNTS: readonly AccountCode[] = [
@@ -102,7 +139,6 @@ export interface Ledger {
   readonly entries: readonly LedgerEntry[];
 }
 
-const ACCOUNT_CODE = /^[0-9]{4}$/;
 export const MAX_DESCRIPTION_LENGTH = 120;
 const MAX_SOURCE_KEY_LENGTH = 80;
 

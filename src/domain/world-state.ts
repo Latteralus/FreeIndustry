@@ -1,5 +1,6 @@
 import type { Company } from './company';
 import type { DiagnosticsState } from './diagnostics';
+import type { Facilities } from './facilities';
 import type { RealEstate } from './real-estate';
 
 /**
@@ -16,4 +17,10 @@ export interface FreeIndustryState {
    * worlds created before Step 07, which have no real estate (ADR-0037).
    */
   readonly realEstate: RealEstate | null;
+  /**
+   * Building structure, floor materials, the equipment catalog, owned
+   * equipment and floor coverings; null in worlds created before Step 08
+   * (ADR-0047, ADR-0048).
+   */
+  readonly facilities: Facilities | null;
 }

@@ -2,6 +2,7 @@ import { encodeBigInt } from '../shared/bigint-codec';
 import type { JsonValue } from '../shared/canonical-json';
 import type { ClockControl } from '../shared/ipc/clock';
 import { COMMANDS, isCommandType, type InjectableFault } from '../shared/ipc/commands';
+import type { QueryResult, SimulationQuery } from '../shared/ipc/facilities';
 import type { ScenarioSummary } from '../shared/ipc/real-estate';
 import {
   commandEnvelopeSchema,
@@ -19,6 +20,7 @@ import { DEFAULT_EPOCH, FREEINDUSTRY_RULES } from '../simulation/freeindustry-ru
 import { SimulationKernel, type WorldConfig } from '../simulation/kernel';
 import { defineCommand, type SimulationRules } from '../simulation/rules';
 import { companyView } from './company-view';
+import { answerQuery, facilitiesView } from './facility-view';
 import { realEstateView } from './real-estate-view';
 import { SimulationPacer, type PacerOptions, type TickOutcome } from './pacer';
 
@@ -184,6 +186,14 @@ export class CommandHost {
       realEstate:
         kernel.state.realEstate &&
         realEstateView(kernel.state.realEstate, kernel.state.company, kernel.config.epoch),
+      facilities:
+        kernel.state.facilities &&
+        facilitiesView(
+          kernel.state.facilities,
+          kernel.state.realEstate,
+          kernel.state.company,
+          kernel.config.epoch,
+        ),
       scenarios: [...this.#scenarios],
       diagnostics: {
         probeCount: diagnostics.probeCount,
@@ -208,6 +218,12 @@ export class CommandHost {
       this.#onThreadFault(fault);
     }
     return outcome;
+  }
+
+  /** A read-only question about the current world; it changes nothing (ADR-0050). */
+  query(query: SimulationQuery): QueryResult {
+    const { facilities, realEstate, company } = this.#kernel.state;
+    return answerQuery(query, facilities, realEstate, company);
   }
 
   /** Clock control: pacing only, so no revision, journal entry or fingerprint change. */

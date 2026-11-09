@@ -46,11 +46,7 @@
       "lumber_stained.png",
       "metal_stock.png"
     ],
-    "conveyors": [
-      "curve_90.png",
-      "powered_roller.png",
-      "straight_roller.png"
-    ],
+    "conveyors": ["curve_90.png", "powered_roller.png", "straight_roller.png"],
     "overlays": [
       "input_zone.png",
       "keep_clear.png",

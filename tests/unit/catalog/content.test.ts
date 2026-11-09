@@ -30,7 +30,7 @@ function problemsOf(content: ContentSources): readonly string[] {
 describe('the bundled content pack', () => {
   it('is valid: three cities, their districts, properties, businesses and scenarios', () => {
     const catalog = baseContent();
-    expect(catalog.contentVersion).toBe('freeindustry-base/1');
+    expect(catalog.contentVersion).toBe('freeindustry-base/2');
     const { cities, districts, properties, businesses } = catalog.realEstate;
     expect(cities.map((city) => city.name)).toEqual(['Harlow Falls', 'Port Calder', 'Cedar Bluff']);
     expect(districts).toHaveLength(6);
@@ -92,7 +92,7 @@ describe('the bundled content pack', () => {
     expect(quick?.quickStart).toMatchObject({ propertyId: 'hf-canal-8', termMonths: 12 });
     const estate = realEstateFor(catalog, must(quick));
     expect(estate.scenario).toEqual({ id: 'quick-start', name: 'Quick Start' });
-    expect(estate.contentVersion).toBe('freeindustry-base/1');
+    expect(estate.contentVersion).toBe('freeindustry-base/2');
     expect(estate.leases).toEqual([]);
   });
 });

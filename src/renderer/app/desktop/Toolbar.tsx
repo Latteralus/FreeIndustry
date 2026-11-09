@@ -18,21 +18,24 @@ export interface ToolbarProps {
   readonly onControl: (control: ClockControl) => void;
   readonly onRunSpeed: (speed: RunSpeed) => void;
   readonly onOpenWindow: (id: WindowId) => void;
+  /** Show the factory in layout mode. */
+  readonly onFactory: () => void;
 }
 
 const NOT_BUILT: readonly { label: string; reason: string }[] = [
-  {
-    label: 'Factory',
-    reason:
-      'Not built yet: factory layout and equipment placement (Step 08). A leased floor is drawn behind the windows.',
-  },
-  { label: 'Equipment Catalog', reason: 'Not built yet: machines and equipment.' },
   { label: 'Personnel', reason: 'Not built yet: employees.' },
   { label: 'Inbox', reason: 'Not built yet: memos and applications.' },
   { label: 'Bank', reason: 'Not built yet: bank accounts and loans.' },
 ];
 
-export function Toolbar({ clock, runSpeed, onControl, onRunSpeed, onOpenWindow }: ToolbarProps) {
+export function Toolbar({
+  clock,
+  runSpeed,
+  onControl,
+  onRunSpeed,
+  onOpenWindow,
+  onFactory,
+}: ToolbarProps) {
   const noWorld = clock === null;
   const running = clock !== null && (clock.speed !== 'paused' || clock.advance !== null);
   return (
@@ -46,6 +49,18 @@ export function Toolbar({ clock, runSpeed, onControl, onRunSpeed, onOpenWindow }
           }}
         >
           City View
+        </button>
+        <button type="button" title="The factory floor in layout mode" onClick={onFactory}>
+          Factory
+        </button>
+        <button
+          type="button"
+          title="Machines, benches, racks and furniture"
+          onClick={() => {
+            onOpenWindow('equipment');
+          }}
+        >
+          Equipment Catalog
         </button>
         {NOT_BUILT.map((item) => (
           <button key={item.label} type="button" disabled title={item.reason}>

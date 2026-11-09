@@ -1,7 +1,18 @@
 import { z } from 'zod';
 import { formatUsd, type Cents } from '../shared/money';
 import { MAX_STARTING_CAPITAL_CENTS, MIN_STARTING_CAPITAL_CENTS } from '../domain/company';
-import { boundsOf } from '../domain/geometry';
+import { EQUIPMENT_CATEGORIES, SIDES, ZONE_KINDS, type EquipmentType } from '../domain/equipment';
+import { facilitiesProblems, type Facilities } from '../domain/facilities';
+import {
+  FEATURE_KINDS,
+  UTILITY_KINDS,
+  type Building,
+  type Feature,
+  type Level,
+} from '../domain/facility';
+import { FLOOR_MATERIAL_CATEGORIES, type FloorMaterial } from '../domain/floor-covering';
+import { boundsOf, type PointMm } from '../domain/geometry';
+import { decompose, intersection, regionContains, type RectMm } from '../domain/region';
 import {
   BUSINESS_ROLES,
   DOOR_KINDS,
@@ -20,8 +31,10 @@ import {
 import { isValidCivilDate, type CivilDate } from '../domain/time';
 
 /**
- * The content catalog (spec §12, plan Step 07, DECISIONS ADR-0037): the
- * declarative JSON under `content/` turned into validated domain data.
+ * The content catalog (spec §12; plan Steps 07–08; DECISIONS ADR-0037,
+ * ADR-0047, ADR-0048): the declarative JSON under `content/` turned into
+ * validated domain data — cities and property, each building's structure,
+ * the floor materials and the equipment catalog.
  * Loading reports every problem it finds — unknown fields, duplicate IDs,
  * missing references, impossible dimensions, buildings that overlap each
  * other or a street, scenarios that could not be played — and never repairs
@@ -35,6 +48,83 @@ const wholeMm = z.int().min(0).max(1_000_000);
 const xy = z.tuple([z.int().min(0).max(100_000), z.int().min(0).max(100_000)]);
 /** Whole cents as a JSON number (content is authored; amounts stay far below 2^53). */
 const cents = z.int().min(1).max(10_000_000_000);
+const centsOrZero = z.int().min(0).max(10_000_000_000);
+/** `[x, y, width, depth]` in millimetres. */
+const rectMm = z.tuple([
+  wholeMm,
+  wholeMm,
+  z.int().min(1).max(1_000_000),
+  z.int().min(1).max(1_000_000),
+]);
+const label = z.string().min(1).max(60);
+const featureSchema = z.strictObject({ kind: z.enum(FEATURE_KINDS), label, rect: rectMm });
+
+/**
+ * A building's structure in a property listing (ADR-0047). Columns may be
+ * given as a grid: every pair of an x and a y centre line holds a column of
+ * the given size. A grid column outside the floor is left out (L-shaped
+ * buildings); one that straddles a wall is an error.
+ */
+const structureSchema = z.strictObject({
+  /** The plot, `[x, y, width, depth]` in site-plan metres; defaults to the building's footprint. */
+  parcel: z
+    .tuple([
+      z.int().min(0).max(100_000),
+      z.int().min(0).max(100_000),
+      z.int().min(1).max(100_000),
+      z.int().min(1).max(100_000),
+    ])
+    .optional(),
+  columns: z
+    .strictObject({
+      label,
+      sizeMm: z.tuple([z.int().min(100).max(2000), z.int().min(100).max(2000)]),
+      xMm: z.array(wholeMm).max(40),
+      yMm: z.array(wholeMm).max(40),
+    })
+    .optional(),
+  features: z.array(featureSchema).max(200).optional(),
+  utilities: z
+    .array(
+      z.strictObject({
+        kind: z.enum(UTILITY_KINDS),
+        label,
+        edge: z.int().min(0),
+        offsetMm: wholeMm,
+        widthMm: z.int().min(100).max(10_000),
+      }),
+    )
+    .min(1)
+    .max(16),
+  levels: z
+    .array(
+      z.strictObject({
+        name: z.string().min(1).max(40),
+        elevationMm: z.int().min(1).max(50_000),
+        deckDepthMm: z.int().min(1).max(2000),
+        clearHeightMm: z.int().min(1).max(50_000),
+        floorLoadKgPerM2: z.int().min(1).max(100_000),
+        floor: z
+          .array(z.tuple([wholeMm, wholeMm]))
+          .min(4)
+          .max(64),
+        features: z.array(featureSchema).max(200).optional(),
+      }),
+    )
+    .max(3)
+    .optional(),
+  stairs: z
+    .array(
+      z.strictObject({
+        upperLevel: z.int().min(1).max(3),
+        flight: rectMm,
+        foot: rectMm,
+        head: rectMm,
+      }),
+    )
+    .max(8)
+    .optional(),
+});
 
 const cityFileSchema = z.strictObject({
   city: z.strictObject({
@@ -115,8 +205,68 @@ const cityFileSchema = z.strictObject({
         depositMonths: z.int(),
         termMonths: z.tuple([z.int(), z.int()]),
         occupiedBy: slug.nullable(),
+        /** The floor material every cell starts in (ADR-0046). */
+        surface: slug,
+        structure: structureSchema,
       }),
     )
+    .max(500),
+});
+
+const floorMaterialsFileSchema = z.strictObject({
+  materials: z
+    .array(
+      z.strictObject({
+        id: slug,
+        name,
+        category: z.enum(FLOOR_MATERIAL_CATEGORIES),
+        description: text,
+        /** Null for a surface buildings may have but nobody installs (worn concrete). */
+        installCentsPerM2: cents.nullable(),
+        removalCentsPerM2: centsOrZero,
+        colour: z.string().regex(/^#[0-9a-f]{6}$/),
+        texture: z.strictObject({
+          set: slug,
+          variants: z.int().min(1).max(16),
+          patternMm: z.tuple([z.int().min(1).max(20_000), z.int().min(1).max(20_000)]),
+        }),
+      }),
+    )
+    .min(1)
+    .max(200),
+});
+
+const zoneSchema = z.strictObject({
+  kind: z.enum(ZONE_KINDS),
+  side: z.enum(SIDES),
+  offsetMm: z.int().min(0).max(100_000),
+  widthMm: z.int().min(1).max(100_000),
+  depthMm: z.int().min(1).max(10_000),
+});
+
+const equipmentFileSchema = z.strictObject({
+  equipment: z
+    .array(
+      z.strictObject({
+        id: slug,
+        name,
+        category: z.enum(EQUIPMENT_CATEGORIES),
+        description: text,
+        supplier: name,
+        priceCents: cents,
+        relocationCents: centsOrZero,
+        footprintMm: z.tuple([z.int().min(1).max(100_000), z.int().min(1).max(100_000)]),
+        heightMm: z.int().min(1).max(20_000),
+        weightKg: z.int().min(1).max(1_000_000),
+        powerVa: z.int().min(0).max(10_000_000),
+        threePhase: z.boolean(),
+        water: z.boolean(),
+        gas: z.boolean(),
+        uses: z.array(z.enum(PERMITTED_USES)).min(1),
+        zones: z.array(zoneSchema).max(16),
+      }),
+    )
+    .min(1)
     .max(500),
 });
 
@@ -146,12 +296,16 @@ const scenariosFileSchema = z.strictObject({
     .max(50),
 });
 
+const fileName = z.string().regex(/^[a-z0-9-]+\.json$/);
+
 const manifestSchema = z.strictObject({
   id: slug,
   version: z.int().min(1),
-  description: text,
-  realEstate: z.array(z.string().regex(/^[a-z0-9-]+\.json$/)).min(1),
-  scenarios: z.string().regex(/^[a-z0-9-]+\.json$/),
+  description: z.string().min(1).max(400),
+  realEstate: z.array(fileName).min(1),
+  scenarios: fileName,
+  floorMaterials: fileName,
+  equipment: fileName,
 });
 
 /** The raw JSON documents of a content pack, by file name. */
@@ -159,6 +313,8 @@ export interface ContentSources {
   readonly manifest: unknown;
   readonly realEstate: Readonly<Record<string, unknown>>;
   readonly scenarios: Readonly<Record<string, unknown>>;
+  readonly floorMaterials: Readonly<Record<string, unknown>>;
+  readonly equipment: Readonly<Record<string, unknown>>;
 }
 
 interface QuickStart {
@@ -185,6 +341,8 @@ export interface ContentCatalog {
   readonly contentVersion: string;
   /** The real estate every new world starts from: nothing leased. */
   readonly realEstate: Omit<RealEstate, 'scenario' | 'contentVersion'>;
+  /** Materials, equipment and building structure every new world starts from: nothing owned. */
+  readonly facilities: Facilities;
   readonly scenarios: readonly Scenario[];
 }
 
@@ -226,10 +384,160 @@ function footprintOf(property: Property): Box {
 
 const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
-/** Buildings must lie inside their district, clear of streets and of each other. */
-function sitePlanProblems(district: District, properties: readonly Property[]): string[] {
+/** A building's parcel on its district plan, in millimetres. */
+function parcelOf(property: Property, buildings: ReadonlyMap<string, Building>): Box {
+  const parcel = buildings.get(property.id)?.parcel;
+  return parcel
+    ? {
+        id: property.id,
+        x0: parcel.x,
+        y0: parcel.y,
+        x1: parcel.x + parcel.width,
+        y1: parcel.y + parcel.depth,
+      }
+    : footprintOf(property);
+}
+
+type RectTuple = readonly [number, number, number, number];
+const rectOf = ([x, y, width, depth]: RectTuple): RectMm => ({ x, y, width, depth });
+
+interface StructureInput {
+  readonly parcel?: RectTuple | undefined;
+  readonly columns?:
+    | {
+        readonly label: string;
+        readonly sizeMm: readonly [number, number];
+        readonly xMm: readonly number[];
+        readonly yMm: readonly number[];
+      }
+    | undefined;
+  readonly features?:
+    readonly { kind: Feature['kind']; label: string; rect: RectTuple }[] | undefined;
+  readonly utilities: readonly {
+    kind: Building['utilities'][number]['kind'];
+    label: string;
+    edge: number;
+    offsetMm: number;
+    widthMm: number;
+  }[];
+  readonly levels?:
+    | readonly {
+        name: string;
+        elevationMm: number;
+        deckDepthMm: number;
+        clearHeightMm: number;
+        floorLoadKgPerM2: number;
+        floor: readonly (readonly [number, number])[];
+        features?: readonly { kind: Feature['kind']; label: string; rect: RectTuple }[] | undefined;
+      }[]
+    | undefined;
+  readonly stairs?:
+    | readonly { upperLevel: number; flight: RectTuple; foot: RectTuple; head: RectTuple }[]
+    | undefined;
+}
+
+const GRID_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+/** Grid columns that stand on the floor; one straddling a wall is a content error. */
+function gridColumns(
+  floor: readonly PointMm[],
+  columns: NonNullable<StructureInput['columns']>,
+  problems: string[],
+): Feature[] {
+  const [width, depth] = columns.sizeMm;
+  if (width % 2 !== 0 || depth % 2 !== 0) {
+    problems.push('column sizes must be even numbers of mm, so a column centres on its grid line');
+    return [];
+  }
+  const outline = decompose(floor).region;
+  const out: Feature[] = [];
+  columns.yMm.forEach((cy, row) => {
+    columns.xMm.forEach((cx, col) => {
+      const r = { x: cx - width / 2, y: cy - depth / 2, width, depth };
+      const reference = `${GRID_LETTERS[row] ?? '?'}${col + 1}`;
+      if (regionContains(outline, r)) {
+        out.push({ kind: 'column', label: `${columns.label} ${reference}`, rect: r });
+      } else if (outline.rects.some((part) => intersection(part, r))) {
+        problems.push(`column ${reference} straddles a wall`);
+      }
+    });
+  });
+  return out;
+}
+
+/** The building record for a property listing, from its structure. */
+function buildingFrom(
+  property: Property,
+  surface: string,
+  structure: StructureInput,
+  problems: string[],
+): Building {
+  const features = (list: StructureInput['features']): Feature[] =>
+    (list ?? []).map((feature) => ({
+      kind: feature.kind,
+      label: feature.label,
+      rect: rectOf(feature.rect),
+    }));
+  const ground: Level = {
+    index: 0,
+    name: 'Ground floor',
+    elevationMm: 0,
+    deckDepthMm: 0,
+    floor: property.floor,
+    clearHeightMm: property.clearHeightMm,
+    floorLoadKgPerM2: property.floorLoadKgPerM2,
+    features: [
+      ...(structure.columns ? gridColumns(property.floor, structure.columns, problems) : []),
+      ...features(structure.features),
+    ],
+  };
+  const upper: Level[] = (structure.levels ?? []).map((level, index) => ({
+    index: index + 1,
+    name: level.name,
+    elevationMm: level.elevationMm,
+    deckDepthMm: level.deckDepthMm,
+    floor: level.floor.map(([x, y]) => ({ x, y })),
+    clearHeightMm: level.clearHeightMm,
+    floorLoadKgPerM2: level.floorLoadKgPerM2,
+    features: features(level.features),
+  }));
+  const bounds = boundsOf(property.floor);
+  const parcel = structure.parcel
+    ? {
+        x: structure.parcel[0] * 1000,
+        y: structure.parcel[1] * 1000,
+        width: structure.parcel[2] * 1000,
+        depth: structure.parcel[3] * 1000,
+      }
+    : {
+        x: property.site.x * 1000 + bounds.minX,
+        y: property.site.y * 1000 + bounds.minY,
+        width: bounds.maxX - bounds.minX,
+        depth: bounds.maxY - bounds.minY,
+      };
+  return {
+    propertyId: property.id,
+    surfaceMaterialId: surface,
+    parcel,
+    levels: [ground, ...upper],
+    utilities: structure.utilities.map((utility) => ({ ...utility })),
+    stairs: (structure.stairs ?? []).map((stair) => ({
+      upperLevel: stair.upperLevel,
+      flight: rectOf(stair.flight),
+      foot: rectOf(stair.foot),
+      head: rectOf(stair.head),
+    })),
+  };
+}
+
+/** Parcels (which contain their buildings) must lie inside their district, clear of streets and of each other. */
+function sitePlanProblems(
+  district: District,
+  properties: readonly Property[],
+  buildings: ReadonlyMap<string, Building>,
+): string[] {
   const problems: string[] = [];
-  const boxes = properties.map(footprintOf);
+  const boxes = properties.map((property) => parcelOf(property, buildings));
   const streets: Box[] = district.streets.map((street) => {
     const half = (street.widthM * 1000) / 2;
     return {
@@ -283,6 +591,7 @@ export function validateContent(sources: ContentSources): ContentResult {
   const districts: District[] = [];
   const businesses: Business[] = [];
   const properties: Property[] = [];
+  const buildings = new Map<string, Building>();
   for (const file of listed.filter((name) => provided.includes(name))) {
     const parsed = cityFileSchema.safeParse(sources.realEstate[file]);
     if (!parsed.success) {
@@ -365,10 +674,18 @@ export function validateContent(sources: ContentSources): ContentResult {
       };
       properties.push(property);
       byDistrict.set(item.district, [...(byDistrict.get(item.district) ?? []), property]);
+      const structureProblems: string[] = [];
+      buildings.set(
+        item.id,
+        buildingFrom(property, item.surface, item.structure, structureProblems),
+      );
+      problems.push(...structureProblems.map((problem) => `${file}: ${item.id}: ${problem}`));
     }
     for (const [id, district] of fileDistricts) {
       problems.push(
-        ...sitePlanProblems(district, byDistrict.get(id) ?? []).map((p) => `${file}: ${p}`),
+        ...sitePlanProblems(district, byDistrict.get(id) ?? [], buildings).map(
+          (p) => `${file}: ${p}`,
+        ),
       );
     }
   }
@@ -383,6 +700,75 @@ export function validateContent(sources: ContentSources): ContentResult {
     leases: [],
   };
   problems.push(...realEstateProblems(realEstate, null));
+
+  const floorMaterials: FloorMaterial[] = [];
+  const materialsFile = sources.floorMaterials[manifest.data.floorMaterials];
+  const parsedMaterials = floorMaterialsFileSchema.safeParse(materialsFile);
+  if (materialsFile === undefined) {
+    problems.push(`manifest.json names ${manifest.data.floorMaterials}, which was not provided`);
+  } else if (!parsedMaterials.success) {
+    problems.push(...zodProblems(manifest.data.floorMaterials, parsedMaterials.error));
+  } else {
+    for (const material of parsedMaterials.data.materials) {
+      floorMaterials.push({
+        id: material.id,
+        name: material.name,
+        category: material.category,
+        description: material.description,
+        installCentsPerM2:
+          material.installCentsPerM2 === null ? null : BigInt(material.installCentsPerM2),
+        removalCentsPerM2: BigInt(material.removalCentsPerM2),
+        colour: material.colour,
+        textureSet: material.texture.set,
+        textureVariants: material.texture.variants,
+        patternMm: { x: material.texture.patternMm[0], y: material.texture.patternMm[1] },
+      });
+    }
+  }
+  const equipmentTypes: EquipmentType[] = [];
+  const equipmentFile = sources.equipment[manifest.data.equipment];
+  const parsedEquipment = equipmentFileSchema.safeParse(equipmentFile);
+  if (equipmentFile === undefined) {
+    problems.push(`manifest.json names ${manifest.data.equipment}, which was not provided`);
+  } else if (!parsedEquipment.success) {
+    problems.push(...zodProblems(manifest.data.equipment, parsedEquipment.error));
+  } else {
+    for (const item of parsedEquipment.data.equipment) {
+      equipmentTypes.push({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        description: item.description,
+        supplier: item.supplier,
+        priceCents: BigInt(item.priceCents),
+        relocationCents: BigInt(item.relocationCents),
+        widthMm: item.footprintMm[0],
+        depthMm: item.footprintMm[1],
+        heightMm: item.heightMm,
+        weightKg: item.weightKg,
+        powerVa: item.powerVa,
+        threePhase: item.threePhase,
+        water: item.water,
+        gas: item.gas,
+        uses: item.uses,
+        zones: item.zones,
+      });
+    }
+  }
+  const facilities: Facilities = {
+    floorMaterials,
+    equipmentTypes,
+    buildings: properties.flatMap((property) => {
+      const building = buildings.get(property.id);
+      return building ? [building] : [];
+    }),
+    equipment: [],
+    coverings: [],
+    installations: [],
+  };
+  if (problems.length === 0) {
+    problems.push(...facilitiesProblems(facilities, realEstate, null));
+  }
 
   const scenarioFile = sources.scenarios[manifest.data.scenarios];
   const scenarios: Scenario[] = [];
@@ -450,6 +836,7 @@ export function validateContent(sources: ContentSources): ContentResult {
     catalog: {
       contentVersion: realEstate.contentVersion,
       realEstate: { cities, districts, businesses, properties, leases: [] },
+      facilities,
       scenarios,
     },
   };

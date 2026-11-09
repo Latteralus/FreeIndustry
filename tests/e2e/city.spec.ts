@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { chooseMenu, loadSave, saveAs, waitReady, windowFrame, world } from './support/desktop';
+import { drawnSize, sceneReady } from './support/factory';
 import { launchApp, removeUserData } from './support/launch';
 
 /**
@@ -18,7 +19,7 @@ async function inspect(page: Page, id: string) {
 }
 
 test('lease a real property from the cityscape and enter its empty floor; it survives a restart', async () => {
-  const first = await launchApp({ seed: 1996 });
+  const first = await launchApp({ seed: 1996, sceneProbe: true });
   const page = await waitReady(first.page);
   const menu = windowFrame(page, 'Main Menu');
   await expect(menu.getByTestId('main-menu-status')).toHaveText(
@@ -96,15 +97,9 @@ test('lease a real property from the cityscape and enter its empty floor; it sur
   await expect(page.getByTestId('facility-caption')).toContainText(
     '8 Canal Street · Workshop, 1,033 sq ft · Empty: no equipment, staff or stock',
   );
-  const floor = await page
-    .getByTestId('facility-floor-plan')
-    .locator('polygon')
-    .evaluate((polygon) => {
-      const box = polygon.getBoundingClientRect();
-      return { width: box.width, height: box.height };
-    });
-  // 8 m × 12 m at 10 px a metre.
-  expect(floor).toEqual({ width: 80, height: 120 });
+  // 8 m × 12 m at 10 px a metre, as the factory scene drew it.
+  await sceneReady(page);
+  await expect.poll(() => drawnSize(page, 'floor')).toEqual({ width: 80, height: 120 });
   const leased = await world(page);
   expect(leased.realEstate?.leases).toHaveLength(1);
 

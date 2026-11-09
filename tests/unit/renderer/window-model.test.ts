@@ -76,6 +76,7 @@ describe('the production window catalog', () => {
       'bills',
       'saves',
       'help',
+      'equipment',
       'diagnostics',
     ]);
   });

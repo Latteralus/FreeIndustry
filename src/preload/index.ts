@@ -27,6 +27,7 @@ function request<T>(body: Record<string, unknown>): Promise<T> {
 const simulation: SimulationBridge = Object.freeze({
   getSnapshot: () => request({ method: 'simulation.getSnapshot' }),
   submitCommand: (envelope) => request({ method: 'simulation.submitCommand', envelope }),
+  query: (query) => request({ method: 'simulation.query', query }),
   control: (control) => request({ method: 'simulation.control', control }),
   restartWorker: () => request({ method: 'simulation.restartWorker' }),
   newWorld: (world) => request({ method: 'simulation.newWorld', world }),
@@ -60,6 +61,8 @@ const bridge: FreeIndustryBridge = Object.freeze({
     electron: process.versions.electron,
     chrome: process.versions.chrome,
     node: process.versions.node,
+    // Set by main only in unpackaged test runs (ADR-0051); mirrors SCENE_PROBE_ARGUMENT.
+    sceneProbe: process.argv.includes('--freeindustry-scene-probe'),
   }),
   simulation,
   saves,

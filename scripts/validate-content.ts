@@ -22,3 +22,9 @@ console.log(
     `(${properties.filter((property) => property.occupant === null).length} vacant), ` +
     `${businesses.length} businesses, ${catalog.scenarios.length} scenarios`,
 );
+const { floorMaterials, equipmentTypes, buildings } = catalog.facilities;
+console.log(
+  `  ${buildings.length} buildings (${buildings.filter((building) => building.levels.length > 1).length} with upper levels, ` +
+    `${buildings.reduce((sum, building) => sum + building.levels.reduce((n, level) => n + level.features.length, 0), 0)} structural features), ` +
+    `${floorMaterials.length} floor materials, ${equipmentTypes.length} equipment types`,
+);

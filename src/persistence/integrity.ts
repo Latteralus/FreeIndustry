@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { intCell, textCell, type SqliteDatabase } from './database';
 import { companyStructureProblems, hasCompanyTables } from './company-repository';
+import { facilitiesStructureProblems, hasFacilitiesTables } from './facilities-repository';
 import { hasRealEstateTables, realEstateStructureProblems } from './real-estate-repository';
 import { applyMigrations, type Migration } from './migrations';
 
@@ -20,7 +21,8 @@ import { applyMigrations, type Migration } from './migrations';
  *    with sequences already issued; from save format 2, books that balance
  *    (every entry, every account balance, every invoice and its payments,
  *    ADR-0033); from format 3, leases that agree with their properties and
- *    obligations (ADR-0039).
+ *    obligations (ADR-0039); from format 4, equipment standing only in leased
+ *    premises and floor installations that agree with their entries (ADR-0049).
  *
  * Kernel-level consistency (fingerprints, invariants) is checked afterwards by
  * restoring the world in the simulation kernel.
@@ -108,6 +110,9 @@ function checkStructure(db: SqliteDatabase): string[] {
   }
   if (hasRealEstateTables(db)) {
     problems.push(...realEstateStructureProblems(db));
+  }
+  if (hasFacilitiesTables(db)) {
+    problems.push(...facilitiesStructureProblems(db));
   }
   return problems;
 }

@@ -28,6 +28,26 @@ const leaseTermsSchema = z.strictObject({
   standingOrder: z.boolean(),
 });
 
+/** An owned item of equipment (Step 08). */
+const equipmentIdSchema = z
+  .string()
+  .regex(/^equipment:[1-9][0-9]{0,15}$/, 'Expected an equipment ID');
+
+/**
+ * Where an item goes: the premises, the level, the minimum corner of its
+ * turned footprint in integer millimetres and its orientation in degrees.
+ * The schema only bounds the numbers; the worker refuses positions off the
+ * 250 mm lattice and orientations other than quarter turns with the reason
+ * (ADR-0045).
+ */
+const placementFields = {
+  propertyId: contentIdSchema,
+  level: z.int().min(0).max(9),
+  xMm: z.int().min(0).max(1_000_000),
+  yMm: z.int().min(0).max(1_000_000),
+  rotation: z.int().min(0).max(359),
+};
+
 /** Longest delay before a diagnostic test obligation's first bill: one year. */
 export const MAX_TEST_OBLIGATION_START_DAYS = 366;
 
@@ -80,6 +100,32 @@ export const COMMANDS = {
   'realEstate.lease': {
     permission: 'renderer',
     payload: leaseTermsSchema,
+  },
+  /**
+   * Buy equipment from its dealer: paid now, held by the dealer until it is
+   * installed (Step 08, ADR-0048).
+   */
+  'equipment.purchase': {
+    permission: 'renderer',
+    payload: z.strictObject({
+      equipmentTypeId: contentIdSchema,
+      quantity: z.int().min(1).max(20),
+    }),
+  },
+  /** Install an owned, uninstalled item in the company's premises, if every placement rule holds. */
+  'equipment.install': {
+    permission: 'renderer',
+    payload: z.strictObject({ equipmentId: equipmentIdSchema, ...placementFields }),
+  },
+  /** Move or turn an installed item within its building; the dealer charges for the rigging. */
+  'equipment.move': {
+    permission: 'renderer',
+    payload: z.strictObject({ equipmentId: equipmentIdSchema, ...placementFields }),
+  },
+  /** Have the dealer take an installed item off the floor and hold it for later. */
+  'equipment.uninstall': {
+    permission: 'renderer',
+    payload: z.strictObject({ equipmentId: equipmentIdSchema }),
   },
   /** Pay (part of) a bill the company owes, from its bank account. */
   'finance.payInvoice': {

@@ -8,13 +8,14 @@
  * `tests/unit/persistence/save-fixtures.test.ts`. Never regenerate an
  * existing fixture: its whole point is to be a save written by an older build.
  *
- * This version writes `format-3-leased-workshop.fisave` (Step 07, save format
- * 3): a world built from the base content, a company that leased the workshop
- * at 8 Canal Street, Harlow Falls, for six months, rent paid by standing order
- * until the money ran short, one rent bill overdue, and the lease still
- * running. The format 1 and format 2 fixtures were written by the Step 04 and
- * Step 05 versions of this script (see the repository history); this build
- * can only write the current format, so it could not reproduce them anyway.
+ * This version writes `format-4-installed-equipment.fisave` (Step 08, save
+ * format 4): a world built from the base content, a company leasing the
+ * industrial unit at 20 Canal Street (with its mezzanine) for a year, a
+ * sliding-table panel saw (3,658 × 1,829 mm) installed turned a quarter, a
+ * workbench installed on the mezzanine and then moved (a paid relocation),
+ * and a second workbench held by its dealer. The format 1–3 fixtures were
+ * written by the Step 04, 05 and 07 versions of this script (see the
+ * repository history); this build can only write the current format.
  */
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -27,13 +28,13 @@ import { KERNEL_FORMAT_VERSION, SimulationKernel } from '../src/simulation/kerne
 import { RNG_ALGORITHM } from '../src/simulation/rng';
 import { worldSetupFor } from '../src/worker/world-setup';
 
-const NAME = 'format-3-leased-workshop';
+const NAME = 'format-4-installed-equipment';
 const FIXTURE = join(import.meta.dirname, '..', 'tests', 'fixtures', 'saves', `${NAME}.fisave`);
 if (existsSync(FIXTURE)) {
   throw new Error(`${FIXTURE} already exists; frozen fixtures are never regenerated`);
 }
 
-const SEED = 19_960_107;
+const SEED = 19_960_108;
 const setup = worldSetupFor(baseContent(), 'standard');
 if (!setup) {
   throw new Error('The base content has no standard scenario');
@@ -58,14 +59,28 @@ const submit = (type: string, payload: unknown) => {
 };
 
 world.advanceTo(10n * MS_PER_HOUR);
-// $2,600: the deposit and first month ($1,560) and two more months, but not a third.
 submit('company.found', {
-  legalName: 'Fixture Lease Co.',
+  legalName: 'Fixture Layout Co.',
   presidentName: 'Lee Fixture',
-  startingCapitalCents: '260000',
-  premises: { propertyId: 'hf-canal-8', termMonths: 6, standingOrder: true },
+  startingCapitalCents: '6000000',
+  premises: { propertyId: 'hf-canal-20', termMonths: 12, standingOrder: true },
 });
-world.advanceTo(100n * MS_PER_DAY + 12n * MS_PER_HOUR);
+world.advanceTo(2n * MS_PER_DAY);
+submit('equipment.purchase', { equipmentTypeId: 'sliding-table-panel-saw', quantity: 1 });
+submit('equipment.purchase', { equipmentTypeId: 'steel-workbench', quantity: 2 });
+const at = (equipmentId: string, level: number, xMm: number, yMm: number, rotation: number) => ({
+  equipmentId,
+  propertyId: 'hf-canal-20',
+  level,
+  xMm,
+  yMm,
+  rotation,
+});
+submit('equipment.install', at('equipment:1', 0, 3000, 12000, 90));
+submit('equipment.install', at('equipment:2', 1, 1000, 1000, 0));
+world.advanceTo(9n * MS_PER_DAY);
+submit('equipment.move', at('equipment:2', 1, 3000, 1500, 0));
+world.advanceTo(40n * MS_PER_DAY + 12n * MS_PER_HOUR);
 
 const scratch = mkdtempSync(join(tmpdir(), 'freeindustry-fixture-'));
 try {
@@ -87,7 +102,7 @@ try {
     'fixture',
     {
       identity: {
-        worldId: '1996a0a0-0000-4000-8000-000000000003',
+        worldId: '1996a0a0-0000-4000-8000-000000000004',
         createdAt: '2026-11-08T11:00:00.000Z',
         contentVersion: null,
       },
@@ -107,7 +122,7 @@ try {
       ],
     },
     {
-      name: 'Format 3 fixture',
+      name: 'Format 4 fixture',
       kind: 'manual',
       savedAt: '2026-11-08T12:00:00.000Z',
       appVersion: '0.1.0',
@@ -116,19 +131,20 @@ try {
   mkdirSync(join(FIXTURE, '..'), { recursive: true });
   copyFileSync(store.pathOf('fixture'), FIXTURE);
   const atSave = world.fingerprint();
-  // Past the end of the six-month lease: the deposit comes back.
-  world.advanceTo(200n * MS_PER_DAY);
+  // Past the end of the year's lease: the dealers clear the floor and the deposit comes back.
+  world.advanceTo(400n * MS_PER_DAY);
   const bigintAsText = (_key: string, value: unknown) =>
     typeof value === 'bigint' ? value.toString() : value;
   console.log(
     JSON.stringify(
       {
         atSave,
-        day200: world.fingerprint(),
+        day400: world.fingerprint(),
         nowMs: kernel.nowMs,
         revision: kernel.worldRevision,
         accounts: world.state.company?.ledger.accounts,
         lease: world.state.realEstate?.leases,
+        equipment: world.state.facilities?.equipment,
       },
       bigintAsText,
       2,

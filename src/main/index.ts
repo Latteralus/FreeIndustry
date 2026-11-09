@@ -41,6 +41,8 @@ if (userDataOverride) {
   app.setPath('userData', userDataOverride);
 }
 const faultInjectionEnabled = unpackagedEnv('FREEINDUSTRY_FAULT_INJECTION') === '1';
+/** The factory scene's read-only measurement probe for real-app tests (ADR-0051). */
+const sceneProbeEnabled = unpackagedEnv('FREEINDUSTRY_SCENE_PROBE') === '1';
 
 // One running FreeIndustry per user profile, so a save file and the recovery
 // log only ever have one writer (ADR-0027). A second launch focuses the first.
@@ -156,7 +158,9 @@ function createMainWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     backgroundColor: '#808080',
-    webPreferences: secureWebPreferences(join(import.meta.dirname, '../preload/index.cjs')),
+    webPreferences: secureWebPreferences(join(import.meta.dirname, '../preload/index.cjs'), {
+      sceneProbe: sceneProbeEnabled,
+    }),
   });
 
   window.once('ready-to-show', () => {

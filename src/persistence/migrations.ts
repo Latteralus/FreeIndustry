@@ -3,6 +3,7 @@ import { messageOf, SaveError } from './save-error';
 import { SCHEMA_V1 } from './schema-v1';
 import { SCHEMA_V2 } from './schema-v2';
 import { SCHEMA_V3 } from './schema-v3';
+import { SCHEMA_V4 } from './schema-v4';
 
 /**
  * Save-schema migrations (spec §10.4, ADR-0027). The schema version is
@@ -62,6 +63,14 @@ export const SAVE_MIGRATIONS: readonly Migration[] = [
     // Worlds saved before Step 07 have no real estate, so the new tables start empty.
     up: (db) => {
       db.exec(SCHEMA_V3);
+    },
+  },
+  {
+    version: 4,
+    description: 'Building structure, floor materials, equipment and floor coverings (Step 08)',
+    // Worlds saved before Step 08 have no facilities, so the new tables start empty.
+    up: (db) => {
+      db.exec(SCHEMA_V4);
     },
   },
 ];

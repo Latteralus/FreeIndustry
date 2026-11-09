@@ -1,0 +1,124 @@
+{
+  "materials": [
+    {
+      "id": "concrete-standard",
+      "name": "Power-floated concrete",
+      "category": "concrete",
+      "description": "Plain industrial slab finish with saw-cut joints. The starting surface of most modern units.",
+      "installCentsPerM2": 2600,
+      "removalCentsPerM2": 600,
+      "colour": "#9a9a94",
+      "texture": { "set": "concrete", "variants": 4, "patternMm": [6000, 6000] }
+    },
+    {
+      "id": "concrete-worn",
+      "name": "Worn concrete",
+      "category": "concrete",
+      "description": "Old, stained and patched slab in the older brick buildings. Existing surface only; not sold.",
+      "installCentsPerM2": null,
+      "removalCentsPerM2": 900,
+      "colour": "#8b8a83",
+      "texture": { "set": "concrete-worn", "variants": 6, "patternMm": [4000, 4000] }
+    },
+    {
+      "id": "concrete-polished",
+      "name": "Ground and polished concrete",
+      "category": "polished-concrete",
+      "description": "Slab ground smooth and sealed; dust-free and easy to sweep.",
+      "installCentsPerM2": 4200,
+      "removalCentsPerM2": 1000,
+      "colour": "#a8a8a2",
+      "texture": { "set": "concrete-polished", "variants": 3, "patternMm": [6000, 6000] }
+    },
+    {
+      "id": "concrete-painted-grey",
+      "name": "Painted concrete, grey",
+      "category": "painted-concrete",
+      "description": "Two coats of floor paint over the existing slab; joints remain visible.",
+      "installCentsPerM2": 1400,
+      "removalCentsPerM2": 900,
+      "colour": "#7d8288",
+      "texture": { "set": "painted-concrete", "variants": 3, "patternMm": [6000, 6000] }
+    },
+    {
+      "id": "epoxy-grey",
+      "name": "Industrial epoxy, grey",
+      "category": "epoxy",
+      "description": "Self-levelling epoxy coating; nearly seamless and resistant to oil and coolant.",
+      "installCentsPerM2": 5500,
+      "removalCentsPerM2": 1600,
+      "colour": "#86898a",
+      "texture": { "set": "epoxy", "variants": 2, "patternMm": [20000, 20000] }
+    },
+    {
+      "id": "epoxy-green",
+      "name": "Industrial epoxy, green",
+      "category": "epoxy",
+      "description": "The same coating in a muted green, often used to mark clean assembly areas.",
+      "installCentsPerM2": 5700,
+      "removalCentsPerM2": 1600,
+      "colour": "#7e9a86",
+      "texture": { "set": "epoxy", "variants": 2, "patternMm": [20000, 20000] }
+    },
+    {
+      "id": "steel-plate",
+      "name": "Steel floor plate",
+      "category": "steel-plate",
+      "description": "10 mm plates bolted down over the slab in 1 m × 2 m modules, for heavy wear areas.",
+      "installCentsPerM2": 18000,
+      "removalCentsPerM2": 3000,
+      "colour": "#6f7478",
+      "texture": { "set": "steel-plate", "variants": 4, "patternMm": [1000, 2000] }
+    },
+    {
+      "id": "diamond-plate",
+      "name": "Diamond tread plate",
+      "category": "diamond-plate",
+      "description": "Raised-pattern steel plate in 1 m × 2 m modules for walkways and loading areas.",
+      "installCentsPerM2": 21000,
+      "removalCentsPerM2": 3000,
+      "colour": "#7b8085",
+      "texture": { "set": "diamond-plate", "variants": 4, "patternMm": [1000, 2000] }
+    },
+    {
+      "id": "anti-slip-coating",
+      "name": "Anti-slip coating",
+      "category": "anti-slip",
+      "description": "Gritted resin coating for wet or oily floors.",
+      "installCentsPerM2": 3800,
+      "removalCentsPerM2": 1400,
+      "colour": "#6d7268",
+      "texture": { "set": "anti-slip", "variants": 3, "patternMm": [20000, 20000] }
+    },
+    {
+      "id": "safety-hatching",
+      "name": "Yellow safety hatching",
+      "category": "safety-marking",
+      "description": "Painted diagonal yellow and grey hatching for hazard and keep-clear areas.",
+      "installCentsPerM2": 4800,
+      "removalCentsPerM2": 900,
+      "colour": "#b49a3c",
+      "texture": { "set": "safety-hatching", "variants": 1, "patternMm": [1000, 1000] }
+    },
+    {
+      "id": "office-vinyl-tile",
+      "name": "Vinyl floor tile",
+      "category": "office",
+      "description": "Hard-wearing 300 mm vinyl composition tiles, the usual floor of the commercial units.",
+      "installCentsPerM2": 3200,
+      "removalCentsPerM2": 1100,
+      "colour": "#a49d8c",
+      "texture": { "set": "vinyl-tile", "variants": 4, "patternMm": [300, 300] }
+    },
+    {
+      "id": "office-carpet-tile",
+      "name": "Carpet tile",
+      "category": "office",
+      "description": "500 mm loop-pile carpet tiles for offices.",
+      "installCentsPerM2": 3600,
+      "removalCentsPerM2": 700,
+      "colour": "#5d6670",
+      "texture": { "set": "carpet-tile", "variants": 4, "patternMm": [500, 500] }
+    }
+  ]
+}

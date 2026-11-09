@@ -27,7 +27,11 @@ module.exports = {
       testMatch: ['**/*.test.tsx'],
       testPathIgnorePatterns: [...ignore, '<rootDir>/tests/e2e/'],
       modulePathIgnorePatterns: ignore,
-      moduleNameMapper: { '\\.css$': '<rootDir>/tests/support/style-stub.cjs' },
+      moduleNameMapper: {
+        '\\.css$': '<rootDir>/tests/support/style-stub.cjs',
+        // jsdom has no GPU: the PixiJS factory scene is replaced by a recording fake (ADR-0051).
+        '(^|/)pixi/pixi-factory-scene$': '<rootDir>/tests/support/fake-factory-scene.ts',
+      },
       setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
       transform,
     },

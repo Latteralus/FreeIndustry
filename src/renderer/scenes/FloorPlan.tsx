@@ -7,8 +7,9 @@ import { DOOR_LABEL, formatLength, scaleBarLength } from '../app/units';
  * real corner coordinates, its doors at their real positions in the walls,
  * the overall dimensions and a scale bar. Drawn at a fixed number of pixels
  * per metre, never fitted to the space available (design law D05), so a
- * garage is small on screen and a factory large. Presentation only: Step 08
- * adds the construction grid and placement, Step 09 the PixiJS renderer.
+ * garage is small on screen and a factory large. Presentation only. The
+ * company's own premises are drawn by `FacilityPlan` (Step 08); this drawing
+ * serves the property inspector and worlds made before Step 08.
  */
 
 export interface FloorPlanProps {

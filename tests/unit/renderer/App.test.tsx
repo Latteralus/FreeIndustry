@@ -82,12 +82,15 @@ describe('classic business desktop', () => {
       'Help',
     ]);
     const toolbar = screen.getByRole('toolbar', { name: 'Main toolbar' });
-    for (const name of ['Factory', 'Equipment Catalog', 'Personnel', 'Inbox', 'Bank']) {
+    for (const name of ['Personnel', 'Inbox', 'Bank']) {
       const button = within(toolbar).getByRole('button', { name });
       expect(button).toBeDisabled();
       expect(button.getAttribute('title')).toMatch(/^Not built yet/);
     }
     expect(within(toolbar).getByRole('button', { name: 'Reports' })).toBeEnabled();
+    // Since Step 08 the factory layout and the equipment catalog exist.
+    expect(within(toolbar).getByRole('button', { name: 'Factory' })).toBeEnabled();
+    expect(within(toolbar).getByRole('button', { name: 'Equipment Catalog' })).toBeEnabled();
     expect(within(toolbar).getByRole('button', { name: 'City View' })).toBeEnabled();
     // The main menu opens beside the Company window (Step 07).
     expect(windowFrame('Main Menu')).toBeInTheDocument();

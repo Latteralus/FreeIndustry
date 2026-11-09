@@ -1,3 +1,4 @@
+import type { QueryResult, SimulationQuery } from '../../src/shared/ipc/facilities';
 import type { SavesBridge, SimulationBridge, WorkspaceBridge } from '../../src/shared/bridge';
 import type { ClockControl } from '../../src/shared/ipc/clock';
 import type { NewWorldRequest } from '../../src/shared/ipc/real-estate';
@@ -40,6 +41,22 @@ export class FakeSimulation implements SimulationBridge {
   readonly listeners = new Set<(event: HostEvent) => void>();
   nextSubmit: IpcResult<never> | null = null;
   restarts = 0;
+  readonly queries: SimulationQuery[] = [];
+  /** How placement queries are answered; allowed with no problems by default. */
+  answer: (query: SimulationQuery) => QueryResult = (query) => ({
+    kind: 'placement',
+    allowed: true,
+    refusal: null,
+    problems: [],
+    footprint: { x: query.xMm, y: query.yMm, width: 1000, depth: 1000 },
+    zones: [],
+    chargeCents: '0',
+  });
+
+  query(query: SimulationQuery): Promise<IpcResult<QueryResult>> {
+    this.queries.push(query);
+    return Promise.resolve({ ok: true, value: this.answer(query) });
+  }
 
   getSnapshot(): Promise<IpcResult<HostSnapshot>> {
     return Promise.resolve({ ok: true, value: this.snapshot });

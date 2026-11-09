@@ -184,7 +184,15 @@ describe('S01: an empty garage', () => {
       { x: 0, y: 6000 },
     ]);
     const state = first.host.kernel.state;
-    expect(Object.keys(state).sort()).toEqual(['company', 'diagnostics', 'realEstate']);
+    expect(Object.keys(state).sort()).toEqual([
+      'company',
+      'diagnostics',
+      'facilities',
+      'realEstate',
+    ]);
+    // The building's structure and the catalogs exist; the company owns nothing in it.
+    expect(state.facilities?.equipment).toEqual([]);
+    expect(state.facilities?.coverings).toEqual([]);
     expect(
       state.company?.ledger.accounts
         .filter((account) => account.balanceCents !== 0n)

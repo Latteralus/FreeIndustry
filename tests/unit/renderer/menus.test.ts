@@ -19,9 +19,11 @@ function context(overrides: Partial<MenuContext> = {}) {
     speed: 'paused',
     advancing: null,
     uiScale: 100,
+    factoryMode: 'operating',
     quickStartAvailable: true,
     actions: {
       openWindow: record('open'),
+      factoryMode: record('factoryMode'),
       newCompany: record('newCompany'),
       quickStart: record('quickStart'),
       scenarios: record('scenarios'),
@@ -92,8 +94,7 @@ describe('menubar', () => {
     // Systems that do not exist yet are listed, and none can be chosen.
     expect(notBuilt.map(({ entry }) => entry.label)).toEqual(
       expect.arrayContaining([
-        'Factory Layout',
-        'Equipment Catalog',
+        'Products',
         'Staff',
         'Hiring',
         'Production',
@@ -115,11 +116,27 @@ describe('menubar', () => {
     for (const label of ['New Company…', 'Quick Start', 'Scenarios…', 'City View…', 'Cities…']) {
       expect(find(menus, label).disabledReason ?? null).toBeNull();
     }
+    // Since Step 08 the factory layout and the equipment catalog are real; Step 09 adds
+    // the operating and inspection modes, a radio group showing the current one.
+    find(menus, 'Factory Layout').onSelect();
+    find(menus, 'Factory Operation').onSelect();
+    find(menus, 'Factory Inspection').onSelect();
+    find(menus, 'Equipment Catalog…').onSelect();
+    expect(calls).toEqual([
+      'factoryMode "layout"',
+      'factoryMode "operating"',
+      'factoryMode "inspection"',
+      'open "equipment"',
+    ]);
+    expect(find(menus, 'Factory Operation')).toMatchObject({
+      role: 'menuitemradio',
+      checked: true,
+    });
+    expect(find(menus, 'Factory Layout')).toMatchObject({ checked: false });
+    calls.length = 0;
     // Menus with no working system have no enabled command at all.
     for (const menu of menus.filter((candidate) =>
-      ['Catalog', 'Personnel', 'Purchasing', 'Sales', 'Contracts', 'Research'].includes(
-        candidate.label,
-      ),
+      ['Personnel', 'Purchasing', 'Sales', 'Contracts', 'Research'].includes(candidate.label),
     )) {
       expect(
         menu.entries.filter(

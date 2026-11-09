@@ -5,9 +5,16 @@ import type { WebPreferences } from 'electron';
  * security checklist). Pure functions, so each rule is asserted in unit
  * tests without launching Electron.
  */
-export function secureWebPreferences(preloadPath: string): WebPreferences {
+/** The renderer argument that turns on the read-only factory scene probe (unpackaged test runs only). */
+export const SCENE_PROBE_ARGUMENT = '--freeindustry-scene-probe';
+
+export function secureWebPreferences(
+  preloadPath: string,
+  options: { readonly sceneProbe?: boolean } = {},
+): WebPreferences {
   return {
     preload: preloadPath,
+    ...(options.sceneProbe ? { additionalArguments: [SCENE_PROBE_ARGUMENT] } : {}),
     contextIsolation: true,
     nodeIntegration: false,
     nodeIntegrationInWorker: false,

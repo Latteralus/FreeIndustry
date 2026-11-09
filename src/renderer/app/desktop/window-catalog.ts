@@ -15,7 +15,8 @@ export type WindowId =
   | 'bills'
   | 'saves'
   | 'help'
-  | 'diagnostics';
+  | 'diagnostics'
+  | 'equipment';
 
 export const WINDOW_CATALOG = new WindowCatalog<WindowId>([
   {
@@ -68,6 +69,12 @@ export const WINDOW_CATALOG = new WindowCatalog<WindowId>([
     title: 'Help',
     defaultBounds: { x: 520, y: 80, width: 520, height: 360 },
     minSize: { width: 360, height: 220 },
+  },
+  {
+    id: 'equipment',
+    title: 'Equipment Catalog',
+    defaultBounds: { x: 640, y: 40, width: 620, height: 560 },
+    minSize: { width: 420, height: 300 },
   },
   {
     id: 'diagnostics',

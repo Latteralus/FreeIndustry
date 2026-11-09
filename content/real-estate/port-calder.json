@@ -150,7 +150,32 @@
       "rentCentsPerMonth": 660000,
       "depositMonths": 3,
       "termMonths": [12, 60],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 2,
+            "offsetMm": 6500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 2,
+            "offsetMm": 7600,
+            "widthMm": 600
+          }
+        ],
+        "columns": {
+          "label": "Steel column",
+          "sizeMm": [400, 400],
+          "xMm": [12000, 24000],
+          "yMm": [12000, 24000, 36000, 48000]
+        }
+      }
     },
     {
       "id": "pc-harbor-3",
@@ -201,7 +226,32 @@
       "rentCentsPerMonth": 890000,
       "depositMonths": 3,
       "termMonths": [12, 60],
-      "occupiedBy": "calder-steel-service"
+      "occupiedBy": "calder-steel-service",
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 2,
+            "offsetMm": 6500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 2,
+            "offsetMm": 7600,
+            "widthMm": 600
+          }
+        ],
+        "columns": {
+          "label": "Steel column",
+          "sizeMm": [400, 400],
+          "xMm": [12000, 24000],
+          "yMm": [12000, 24000, 36000, 48000, 60000]
+        }
+      }
     },
     {
       "id": "pc-harbor-5",
@@ -259,7 +309,51 @@
       "rentCentsPerMonth": 1750000,
       "depositMonths": 3,
       "termMonths": [24, 120],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 2,
+            "offsetMm": 6500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 2,
+            "offsetMm": 7600,
+            "widthMm": 600
+          },
+          {
+            "kind": "gas",
+            "label": "Gas meter and isolation valve",
+            "edge": 2,
+            "offsetMm": 8700,
+            "widthMm": 600
+          }
+        ],
+        "columns": {
+          "label": "Steel column",
+          "sizeMm": [400, 400],
+          "xMm": [12000, 24000, 36000, 48000],
+          "yMm": [12000, 24000, 36000, 48000, 60000, 72000, 84000]
+        },
+        "features": [
+          {
+            "kind": "obstacle",
+            "label": "Substation transformer room",
+            "rect": [55000, 0, 5000, 4000]
+          },
+          {
+            "kind": "forbidden",
+            "label": "Transformer room access: keep clear",
+            "rect": [55000, 4000, 5000, 1500]
+          }
+        ]
+      }
     },
     {
       "id": "pc-harbor-7",
@@ -312,7 +406,39 @@
       "rentCentsPerMonth": 1390000,
       "depositMonths": 3,
       "termMonths": [24, 120],
-      "occupiedBy": "northshore-appliance"
+      "occupiedBy": "northshore-appliance",
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 0,
+            "offsetMm": 6500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 0,
+            "offsetMm": 7600,
+            "widthMm": 600
+          },
+          {
+            "kind": "gas",
+            "label": "Gas meter and isolation valve",
+            "edge": 0,
+            "offsetMm": 8700,
+            "widthMm": 600
+          }
+        ],
+        "columns": {
+          "label": "Steel column",
+          "sizeMm": [400, 400],
+          "xMm": [12000, 24000, 36000],
+          "yMm": [12000, 24000, 36000, 48000, 60000, 72000]
+        }
+      }
     },
     {
       "id": "pc-harbor-10",
@@ -356,7 +482,33 @@
       "rentCentsPerMonth": 270000,
       "depositMonths": 2,
       "termMonths": [12, 60],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 0,
+            "offsetMm": 7500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 0,
+            "offsetMm": 8600,
+            "widthMm": 600
+          },
+          {
+            "kind": "gas",
+            "label": "Gas meter and isolation valve",
+            "edge": 0,
+            "offsetMm": 9700,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-harbor-12",
@@ -400,7 +552,33 @@
       "rentCentsPerMonth": 270000,
       "depositMonths": 2,
       "termMonths": [12, 60],
-      "occupiedBy": "great-lakes-polymers"
+      "occupiedBy": "great-lakes-polymers",
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 0,
+            "offsetMm": 7500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 0,
+            "offsetMm": 8600,
+            "widthMm": 600
+          },
+          {
+            "kind": "gas",
+            "label": "Gas meter and isolation valve",
+            "edge": 0,
+            "offsetMm": 9700,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-14",
@@ -444,7 +622,19 @@
       "rentCentsPerMonth": 14000,
       "depositMonths": 1,
       "termMonths": [1, 24],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 3,
+            "offsetMm": 1900,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-16",
@@ -488,7 +678,26 @@
       "rentCentsPerMonth": 16500,
       "depositMonths": 1,
       "termMonths": [1, 24],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 3,
+            "offsetMm": 1900,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 3,
+            "offsetMm": 3000,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-20",
@@ -532,7 +741,26 @@
       "rentCentsPerMonth": 78000,
       "depositMonths": 2,
       "termMonths": [6, 36],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 2,
+            "offsetMm": 6500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 2,
+            "offsetMm": 7600,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-22",
@@ -576,7 +804,26 @@
       "rentCentsPerMonth": 78000,
       "depositMonths": 2,
       "termMonths": [6, 36],
-      "occupiedBy": "volta-coil-motor"
+      "occupiedBy": "volta-coil-motor",
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 2,
+            "offsetMm": 6500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 2,
+            "offsetMm": 7600,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-30",
@@ -620,7 +867,26 @@
       "rentCentsPerMonth": 96000,
       "depositMonths": 2,
       "termMonths": [6, 36],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "office-vinyl-tile",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 0,
+            "offsetMm": 6200,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 0,
+            "offsetMm": 7300,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-32",
@@ -664,7 +930,26 @@
       "rentCentsPerMonth": 96000,
       "depositMonths": 2,
       "termMonths": [6, 36],
-      "occupiedBy": "calder-department-stores"
+      "occupiedBy": "calder-department-stores",
+      "surface": "office-vinyl-tile",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 0,
+            "offsetMm": 6200,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 0,
+            "offsetMm": 7300,
+            "widthMm": 600
+          }
+        ]
+      }
     },
     {
       "id": "pc-east-40",
@@ -710,7 +995,33 @@
       "rentCentsPerMonth": 205000,
       "depositMonths": 2,
       "termMonths": [12, 60],
-      "occupiedBy": null
+      "occupiedBy": null,
+      "surface": "concrete-standard",
+      "structure": {
+        "utilities": [
+          {
+            "kind": "power",
+            "label": "Electrical intake and distribution board",
+            "edge": 0,
+            "offsetMm": 7500,
+            "widthMm": 600
+          },
+          {
+            "kind": "water",
+            "label": "Water main stopcock and sink",
+            "edge": 0,
+            "offsetMm": 8600,
+            "widthMm": 600
+          },
+          {
+            "kind": "gas",
+            "label": "Gas meter and isolation valve",
+            "edge": 0,
+            "offsetMm": 9700,
+            "widthMm": 600
+          }
+        ]
+      }
     }
   ]
 }

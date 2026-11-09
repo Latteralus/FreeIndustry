@@ -11,13 +11,15 @@ import type { ScenarioSummary } from '../../shared/ipc/real-estate';
 import { Dialog } from '../components/Dialog';
 import { MenuBar } from '../components/MenuBar';
 import { MessageBox } from '../components/MessageBox';
-import { FactoryViewport } from '../scenes/FactoryViewport';
+import type { FactoryMode } from '../scenes/factory/camera';
+import { FactoryViewport, type LayoutTool } from '../scenes/FactoryViewport';
 import { AccountsWindow } from '../windows/AccountsWindow';
 import { BillsWindow } from '../windows/BillsWindow';
 import { CitiesWindow } from '../windows/CitiesWindow';
 import { CityWindow } from '../windows/CityWindow';
 import { CompanyWindow } from '../windows/CompanyWindow';
 import { DiagnosticsWindow } from '../windows/DiagnosticsWindow';
+import { EquipmentWindow } from '../windows/EquipmentWindow';
 import { HelpWindow } from '../windows/HelpWindow';
 import { LeaseDialog } from '../windows/LeaseDialog';
 import { MainMenuWindow } from '../windows/MainMenuWindow';
@@ -102,6 +104,13 @@ export function App({
   const clock = world?.clock ?? null;
   const company = world?.company ?? null;
   const realEstate = world?.realEstate ?? null;
+  const facilities = world?.facilities ?? null;
+  // The factory display mode, the placement tool and the selection are presentation
+  // state; only commands change the world (ADR-0051).
+  const [factoryMode, setFactoryMode] = useState<FactoryMode>('operating');
+  const [tool, setTool] = useState<LayoutTool | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
   const scenarios = world?.scenarios ?? [];
   const quickStartScenario = scenarios.find((scenario) => scenario.quickStart !== null) ?? null;
   const premises = realEstate?.leases.find((lease) => lease.status === 'active') ?? null;
@@ -261,9 +270,16 @@ export function App({
     speed: clock?.speed ?? null,
     advancing: clock?.advance?.until ?? null,
     uiScale,
+    factoryMode,
     quickStartAvailable: quickStartScenario !== null,
     actions: {
       openWindow,
+      factoryMode: (mode) => {
+        if (mode !== 'layout') {
+          setTool(null);
+        }
+        setFactoryMode(mode);
+      },
       newCompany: () => {
         setDialog({ kind: 'newWorld', title: 'New Company' });
       },
@@ -483,6 +499,26 @@ export function App({
             onViewChange={onViewChange}
           />
         );
+      case 'equipment':
+        return (
+          <EquipmentWindow
+            facilities={facilities}
+            hasCompany={company !== null}
+            units={units}
+            host={host}
+            onPlace={(next) => {
+              setTool(next);
+              setFactoryMode('layout');
+            }}
+            selectedId={selectedEntity}
+            onShow={(id) => {
+              setSelectedEntity(id);
+              setFocusRequest((count) => count + 1);
+            }}
+            view={view}
+            onViewChange={onViewChange}
+          />
+        );
       case 'diagnostics':
         return (
           <DiagnosticsWindow
@@ -524,12 +560,24 @@ export function App({
           onControl={control}
           onRunSpeed={setRunSpeed}
           onOpenWindow={openWindow}
+          onFactory={() => {
+            setFactoryMode('layout');
+          }}
         />
         <div ref={workspaceRef} className="workspace" data-testid="workspace">
           <FactoryViewport
             companyName={company?.legalName ?? null}
             premises={premisesProperty}
             units={units}
+            facilities={facilities}
+            mode={factoryMode}
+            onMode={setFactoryMode}
+            selectedId={selectedEntity}
+            onSelect={setSelectedEntity}
+            focusRequest={focusRequest}
+            tool={tool}
+            onTool={setTool}
+            host={host}
           />
           {shownWindows.map((id) => {
             const record = layout.windows[id];

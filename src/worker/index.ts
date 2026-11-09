@@ -205,6 +205,9 @@ port.on('message', (raw: unknown) => {
       }
       return;
     }
+    case 'query':
+      respond(ipcOk(host.query(request.query)));
+      return;
     case 'control': {
       const { control } = request;
       const result = host.control(control);

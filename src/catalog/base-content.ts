@@ -1,3 +1,5 @@
+import floorMaterials from '../../content/floor-materials/floor-materials.json';
+import equipment from '../../content/machines/equipment.json';
 import manifest from '../../content/manifest.json';
 import cedarBluff from '../../content/real-estate/cedar-bluff.json';
 import harlowFalls from '../../content/real-estate/harlow-falls.json';
@@ -19,6 +21,8 @@ export const BASE_CONTENT: ContentSources = {
     'cedar-bluff.json': cedarBluff,
   },
   scenarios: { 'scenarios.json': scenarios },
+  floorMaterials: { 'floor-materials.json': floorMaterials },
+  equipment: { 'equipment.json': equipment },
 };
 
 let cached: ContentCatalog | null = null;

@@ -61,12 +61,16 @@ describe('real-estate rules in the kernel', () => {
   });
 
   it('refuses a world setup that already holds leases, or that is invalid', () => {
-    const setup = setupFor().setup as Record<string, unknown>;
+    const full = setupFor().setup as { realEstate: Record<string, unknown>; facilities: unknown };
+    const setup = full.realEstate;
     const withLease = {
-      ...setup,
-      properties: (setup['properties'] as Record<string, unknown>[]).map((item, index) =>
-        index === 0 ? { ...item, occupant: { kind: 'lease', leaseId: 'lease:1' } } : item,
-      ),
+      ...full,
+      realEstate: {
+        ...setup,
+        properties: (setup['properties'] as Record<string, unknown>[]).map((item, index) =>
+          index === 0 ? { ...item, occupant: { kind: 'lease', leaseId: 'lease:1' } } : item,
+        ),
+      },
     };
     expect(() =>
       SimulationKernel.create(
@@ -75,7 +79,7 @@ describe('real-estate rules in the kernel', () => {
         withLease as JsonValue,
       ),
     ).toThrow('A new world cannot start with leases');
-    const broken = { ...setup, districts: [] };
+    const broken = { ...full, realEstate: { ...setup, districts: [] } };
     expect(() =>
       SimulationKernel.create(
         FREEINDUSTRY_RULES,

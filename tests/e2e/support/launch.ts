@@ -17,6 +17,8 @@ export interface LaunchOptions {
   readonly faultInjection?: boolean;
   /** Fixed world seed (`FREEINDUSTRY_WORLD_SEED`); random when omitted. */
   readonly seed?: number;
+  /** Turn on the factory scene's read-only measurement probe (`FREEINDUSTRY_SCENE_PROBE`). */
+  readonly sceneProbe?: boolean;
   /** Reuse this userData directory (saves survive between launches); a new temporary one when omitted. */
   readonly userDataDir?: string;
 }
@@ -43,6 +45,11 @@ export async function launchApp(options: LaunchOptions = {}): Promise<LaunchedAp
     delete env['FREEINDUSTRY_WORLD_SEED'];
   } else {
     env['FREEINDUSTRY_WORLD_SEED'] = String(options.seed);
+  }
+  if (options.sceneProbe) {
+    env['FREEINDUSTRY_SCENE_PROBE'] = '1';
+  } else {
+    delete env['FREEINDUSTRY_SCENE_PROBE'];
   }
   if (options.faultInjection) {
     env['FREEINDUSTRY_FAULT_INJECTION'] = '1';

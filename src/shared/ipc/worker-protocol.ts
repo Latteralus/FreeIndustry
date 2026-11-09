@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { clockControlSchema } from './clock';
+import { simulationQuerySchema } from './facilities';
 import { newWorldRequestSchema } from './real-estate';
 import { saveIdSchema, saveRequestSchema, workspaceUpdateSchema } from './saves';
 import {
@@ -46,6 +47,8 @@ const requestId = z.int().min(1);
 export const workerRequestSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('getSnapshot'), requestId }),
   z.strictObject({ kind: z.literal('submitCommand'), requestId, envelope: commandEnvelopeSchema }),
+  /** A read-only question; the worker answers from the current world without changing it. */
+  z.strictObject({ kind: z.literal('query'), requestId, query: simulationQuerySchema }),
   /** Clock control: answered with a world snapshot. */
   z.strictObject({ kind: z.literal('control'), requestId, control: clockControlSchema }),
   /** Graceful stop: the worker autosaves a changed world and closes its recovery log first. */

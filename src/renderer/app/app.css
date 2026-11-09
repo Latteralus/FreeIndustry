@@ -937,7 +937,7 @@ select:disabled {
   inset: 0;
   overflow: auto;
   padding: 8px;
-  /* No decorative grid behind a drawing to scale; the construction grid is Step 08. */
+  /* No decorative grid behind a drawing to scale; the construction grid is drawn in layout mode. */
   background: var(--workspace);
 }
 
@@ -1049,4 +1049,117 @@ select:disabled {
 
 .cities-window .link-button {
   white-space: nowrap;
+}
+
+/* ------------------------------------------------- factory layout (Step 08) */
+
+.factory-viewport-tools,
+.factory-viewport-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  color: #e4e8e6;
+}
+
+.factory-viewport-status {
+  padding: 2px 4px;
+  background: rgb(0 0 0 / 25%);
+}
+
+.factory-viewport-refusal {
+  flex-basis: 100%;
+  margin: 0;
+  color: #ffd27a;
+}
+
+.factory-viewport-floor {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.factory-viewport-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.factory-canvas-host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.factory-canvas-host:focus-visible {
+  outline: 1px dotted #e4e8e6;
+  outline-offset: -2px;
+}
+
+.factory-canvas-scene,
+.factory-canvas-scene canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.factory-viewport-modes button[aria-pressed='true'] {
+  border-style: inset;
+  background: #b8b8b0;
+}
+
+.factory-viewport-tooltip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 1px 4px;
+  border: 1px solid #101010;
+  background: #ffffe1;
+  color: #101010;
+  pointer-events: none;
+}
+
+.factory-viewport-scalebar {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e4e8e6;
+  pointer-events: none;
+}
+
+.factory-viewport-scalebar span {
+  display: inline-block;
+  height: 4px;
+  background: #e4e8e6;
+}
+
+.data-table tr.row-selected td {
+  background: #c8d4e0;
+}
+
+.equipment-sheet dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 8px;
+  margin: 4px 0;
+}
+
+.equipment-sheet dd {
+  margin: 0;
+}
+
+.equipment-sheet h3 {
+  margin: 6px 0 2px;
+  font-size: 1em;
+}
+
+.equipment-diagram {
+  display: block;
+  margin: 4px 0;
+  background: #e6e2d6;
 }

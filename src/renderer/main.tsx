@@ -4,6 +4,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { browserProfileStore } from './app/desktop/profile-store';
+import { installSceneProbe } from './scenes/factory/scene-probe';
 import './app/app.css';
 
 const container = document.getElementById('root');
@@ -12,6 +13,10 @@ if (!container) {
 }
 
 const bridge = window.freeIndustry;
+// Real-app measurement of the factory drawing; main enables it only in unpackaged test runs.
+if (bridge?.runtime.sceneProbe === true) {
+  installSceneProbe(window);
+}
 
 /** Browser storage can be unavailable; preferences are then simply not remembered. */
 function localStorageOrNull(): Storage | null {

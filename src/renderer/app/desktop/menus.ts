@@ -5,6 +5,13 @@ import { describeSpeed, targetName } from '../clock-format';
 import { UI_SCALES, type UiScale } from './profile-store';
 import type { WindowId } from './window-catalog';
 import type { DesktopLayout, WindowAction, WindowCatalog } from './window-model';
+import type { FactoryMode } from '../../scenes/factory/camera';
+
+const FACTORY_MODE_MENU_LABEL: Record<FactoryMode, string> = {
+  operating: 'Factory Operation',
+  layout: 'Factory Layout',
+  inspection: 'Factory Inspection',
+};
 
 /**
  * The menubar (spec §3.2: File, View, Company, City, Catalog, Personnel,
@@ -27,10 +34,14 @@ export interface MenuContext {
   readonly speed: 'paused' | RunSpeed | null;
   readonly advancing: AdvanceTarget | null;
   readonly uiScale: UiScale;
+  /** The factory display mode now shown. */
+  readonly factoryMode: FactoryMode;
   /** Whether the content offers a Quick Start scenario. */
   readonly quickStartAvailable: boolean;
   readonly actions: {
     readonly openWindow: (id: WindowId) => void;
+    /** Show the factory in a display mode (Step 09: operating, layout, inspection). */
+    readonly factoryMode: (mode: FactoryMode) => void;
     readonly newCompany: () => void;
     readonly quickStart: () => void;
     readonly scenarios: () => void;
@@ -158,11 +169,16 @@ export function buildMenus(context: MenuContext): MenuDefinition[] {
       label: 'View',
       mnemonic: 'V',
       entries: [
-        notBuilt(
-          'view-factory',
-          'Factory Layout',
-          'equipment placement on the factory floor (Step 08); a leased floor is drawn behind the windows',
-        ),
+        ...(['operating', 'layout', 'inspection'] as const).map((mode): MenuEntry => ({
+          kind: 'command',
+          id: `view-factory-${mode}`,
+          label: FACTORY_MODE_MENU_LABEL[mode],
+          role: 'menuitemradio',
+          checked: context.factoryMode === mode,
+          onSelect: () => {
+            actions.factoryMode(mode);
+          },
+        })),
         command('view-city', 'City', () => {
           actions.openWindow('city');
         }),
@@ -211,7 +227,9 @@ export function buildMenus(context: MenuContext): MenuDefinition[] {
       label: 'Catalog',
       mnemonic: 'A',
       entries: [
-        notBuilt('catalog-equipment', 'Equipment Catalog', 'machines and equipment'),
+        command('catalog-equipment', 'Equipment Catalog…', () => {
+          actions.openWindow('equipment');
+        }),
         notBuilt('catalog-products', 'Products', 'products and recipes'),
       ],
     },

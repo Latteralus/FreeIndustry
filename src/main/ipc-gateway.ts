@@ -1,4 +1,5 @@
 import type { ClockControl } from '../shared/ipc/clock';
+import type { QueryResult, SimulationQuery } from '../shared/ipc/facilities';
 import type { NewWorldRequest } from '../shared/ipc/real-estate';
 import type {
   ExportResult,
@@ -48,6 +49,7 @@ export interface WorkerPort {
   readonly status: WorkerStatus;
   getWorldSnapshot(): Promise<IpcResult<WorldSnapshot>>;
   submitCommand(envelope: CommandEnvelope): Promise<IpcResult<CommandReceipt>>;
+  query(query: SimulationQuery): Promise<IpcResult<QueryResult>>;
   control(control: ClockControl): Promise<IpcResult<WorldSnapshot>>;
   restart(): IpcResult<WorkerStatus>;
   newWorld(request: NewWorldRequest): Promise<IpcResult<WorldSnapshot>>;
@@ -194,6 +196,8 @@ export class IpcGateway {
         return this.#snapshot();
       case 'simulation.submitCommand':
         return this.#worker.submitCommand(request.envelope);
+      case 'simulation.query':
+        return this.#worker.query(request.query);
       case 'simulation.control': {
         const world = await this.#worker.control(request.control);
         return world.ok ? ipcOk({ worker: this.#worker.status, world: world.value }) : world;

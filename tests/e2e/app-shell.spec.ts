@@ -76,6 +76,7 @@ test('preload bridge is narrow and frozen, and exactly one window opens', async 
       'control',
       'getSnapshot',
       'newWorld',
+      'query',
       'restartWorker',
       'submitCommand',
       'subscribe',

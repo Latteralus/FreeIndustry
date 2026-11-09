@@ -199,31 +199,31 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 
 ## Step 08 — Authoritative facility geometry and equipment placement
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Model parcel/interior polygons, walls, columns, doors, docks, power/utility connections, levels, forbidden zones, and usable floor area.
-- [ ] Use canonical integer millimeters and a consistent world-to-pixel transform; provide the specified 500-mm construction grid.
-- [ ] Implement factory layout mode with pan/zoom, rotation, bounds/collision checks, clearance envelopes, walkways, access zones, and placement previews.
-- [ ] Define equipment footprint/cost/utility/port data; purchasing equipment creates owned equipment that must be installed before use.
-- [ ] **Coordinates and grid (ADR-0045).**
+- [x] Model parcel/interior polygons, walls, columns, doors, docks, power/utility connections, levels, forbidden zones, and usable floor area.
+- [x] Use canonical integer millimeters and a consistent world-to-pixel transform; provide the specified 500-mm construction grid.
+- [x] Implement factory layout mode with pan/zoom, rotation, bounds/collision checks, clearance envelopes, walkways, access zones, and placement previews.
+- [x] Define equipment footprint/cost/utility/port data; purchasing equipment creates owned equipment that must be installed before use.
+- [x] **Coordinates and grid (ADR-0045).**
   - Each level has a local millimetre frame with its origin at the outline's minimum corner; content validation refuses outlines that do not start there.
   - One world-wide `CONSTRUCTION_GRID_MM = 500`. Cell identity is (property, level, col, row), derived from coordinates.
   - Each cell is classified full, partial or outside against the exact usable region (outline minus columns, obstacles and forbidden zones), with its exact covered area in `bigint` mm².
   - Usable area is the exact region area, never a cell count or bounding box.
-- [ ] **Exact placement (ADR-0045).**
+- [x] **Exact placement (ADR-0045).**
   - Footprints are integer mm from catalog data and never rounded to cells.
   - Positions lie on the 250 mm lattice; layout mode snaps to 500 mm by default, with an optional 250 mm sub-grid.
   - Orientation is a quarter turn about the vertical axis.
   - Collision, clearance, ports, maintenance areas, operator stations, walls and utilities are tested on exact geometry, not cell occupancy.
   - Structural floor-load capacity stays a property of the slab.
-- [ ] **Floor-covering data architecture (ADR-0046), without purchasing.**
+- [x] **Floor-covering data architecture (ADR-0046), without purchasing.**
   - A data-driven, validated floor-material catalog (`content/floor-materials/`, part of `check:content`).
   - A starting-surface material for every property listing.
   - The sparse per-cell covering layer in world state, read model, fingerprints and the next save format, with invariants: covered cells are eligible and materials are known.
   - Coverings are independent of placed objects.
-- [ ] The layout view shows the toggleable construction grid on exact cell boundaries, top-down (D11), and draws each placed object exactly to its footprint.
+- [x] The layout view shows the toggleable construction grid on exact cell boundaries, top-down (D11), and draws each placed object exactly to its footprint.
 
 **Acceptance gate:** A tiny garage renders tiny relative to a large warehouse; floor area derives from geometry, not viewport size. An oversized machine or blocked route cannot be placed. Every placement and expenditure persists exactly. In addition:
 
@@ -233,32 +233,55 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 - **Floor-layer tests.** Every listing loads with its starting surface. Moving or removing equipment leaves every cell's covering unchanged. Covering state round-trips through save/load with identical fingerprints.
 - **Saves.** The earlier fixture saves still upgrade.
 
+**Gate verification (2026-11-08, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (now validating floor materials, equipment and building structure in `check:content`; Jest 58 suites / 675 tests), `npm run check:deps`, `npm run test:e2e` (28/28) and `npm run pack` passed. The gate is covered as follows:
+
+- **A tiny garage renders tiny beside a large warehouse; area from geometry.** In the real app the 3.0 × 5.8 m garage is drawn 30 × 58 px and a 24 × 40 m warehouse 240 × 400 px at the same 10 px/m (`facility.spec.ts`). Usable areas come from exact region geometry: outline minus columns, walls, obstacles, stair flights and forbidden zones (`region.test.ts`, `facility-content.test.ts`).
+- **An oversized machine or blocked route cannot be placed.** S03 passes headless and in the real app. An edge bander that fits neither way round is refused with both sets of dimensions. A grinder that would cut off a shelf's operator station is refused because no 800 mm way would remain. Both fingerprints are unchanged, and the worker's preview returns the colliding rectangles (`s03-improper-fit.test.ts`, `equipment-rules.test.ts`, `facility.spec.ts`). Height, slab load, power, phase, use, landings, other equipment and zones are each refused with their reason.
+- **Every placement and expenditure persists exactly.** Purchases are invoiced and paid through 1500 Machinery and equipment, and moves are charged to 6200. A laid-out unit round-trips through save format 4 with identical fingerprints and continues identically (`facilities-save.test.ts`). The real app saves, quits, relaunches and loads with identical fingerprint, facilities and books.
+- **Area tests.** The property test (200 runs) shows that per-cell covered areas sum exactly to the usable area over random rectilinear outlines with columns. The garage has 72 cells, 6 of them partial, and 17.4 m².
+- **Placement tests.** Positions off the 250 mm lattice and a 45° turn are refused. The 3,658 × 1,829 mm saw is placed, stored and reloaded with its exact footprint (also in the frozen format 4 fixture).
+- **Zoom tests.** Cells and footprints measure mm × px/m ÷ 1000 at every zoom step, and world ↔ screen round-trips are exact (`plan-transform.test.ts`). In the real app the bench is 144 × 60 px at 80 px/m and 36 × 15 px at 20 px/m, with the fingerprint unchanged by zooming.
+- **Floor-layer tests.** Every listing loads with its starting surface (`facility-content.test.ts`). Installing, moving and removing equipment leave every covering and the slab unchanged (`equipment-rules.test.ts`, and the property test over random scripts). Coverings on two levels round-trip through save and load with identical fingerprints (`facilities-save.test.ts`).
+- **Saves.** The format 1, 2 and 3 fixtures upgrade to format 4 with a backup and reach their locked fingerprints. A new frozen `format-4-installed-equipment.fisave` continues to locked day-400 fingerprints.
+
+The packaged `FreeIndustry.exe` was smoke-tested read-only: 19 equipment types and 12 floor materials load, a placement query answers through the packaged IPC path, the Equipment Catalog opens, no CSP violation occurs, and the world is unchanged (nothing written to the real profile). Design is in DECISIONS ADR-0047 – ADR-0050; ADR-0046's installation invariant is amended to name the entry that recognised the cost.
+
+Limits:
+
+- Installing is instantaneous, by the dealer's riggers; delivery through the dock is Step 14 and installed equipment is idle until Step 13.
+- Ports must stay clear but are not yet connected (Step 15).
+- Panning is by scrolling the viewport, and the drawing is SVG until the PixiJS renderer of Step 09.
+- Floor coverings exist as data only; buying them is Step 09A.
+- One run of the whole E2E suite saw `desktop.spec.ts`'s S09 gate fail once (a `toBeCloseTo` on window geometry). It passed in every one of the six later runs, including two full-suite runs; it was not investigated further.
+
+Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
+
 ## Step 09 — PixiJS factory renderer: true top-down layout and operating views
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 > **Superseded 2026-11-08 (owner decision, DECISIONS ADR-0044):** this step originally asked for "top-down layout mode and an old-school oblique/three-quarter operating mode". No oblique, three-quarter or isometric mode will be built. Every mode is true top-down.
 
 **Build:**
 
-- [ ] Implement rendering projections from authoritative domain state, selection/inspection synchronization, stable sprite IDs, camera transforms, and texture management.
-- [ ] **One orthographic projection** (D11, ADR-0044):
+- [x] Implement rendering projections from authoritative domain state, selection/inspection synchronization, stable sprite IDs, camera transforms, and texture management.
+- [x] **One orthographic projection** (D11, ADR-0044):
   - Layout/construction, operating and inspection modes all draw straight down from the **same physical coordinates**. They differ only in tools, overlays and animation.
   - World-to-screen is one affine map with an exact inverse.
   - The camera holds a centre in mm and a zoom step only: it pans and zooms, never tilts or rotates, and is north-up.
   - Rotating an object turns its footprint on the floor, never the view.
-- [ ] Render facilities, machines, doors, storage zones, docks, and placeholder original industrial sprites (newly authored, not copied from the original):
+- [x] Render facilities, machines, doors, storage zones, docks, and placeholder original industrial sprites (newly authored, not copied from the original):
   - every sprite drawn for the overhead view at real proportions, with neutral shading so quarter turns stay correct;
   - each object's drawn extent equals its physical footprint;
   - drawing order by layer and height, never by screen y.
-- [ ] **Floor and grid rendering (ADR-0046):**
+- [x] **Floor and grid rendering (ADR-0046):**
   - a floor layer drawing each cell's covering from the Step 08 data, in cached chunks with viewport culling and dirty-chunk redraws;
   - texture atlases with deterministic per-cell variants, and each material's own decorative pattern, independent of the grid;
   - level-of-detail by zoom;
   - a toggleable grid overlay aligned to exact 500 mm cell boundaries at every zoom;
   - floor and objects rendered as independent layers;
   - no React element per cell, and no display object per cell at ordinary zooms.
-- [ ] Establish scene diff updates, sprite pooling, zoom behavior, UI overlays, and minimal operational state indicators. Local previews stay renderer state until a validated command.
+- [x] Establish scene diff updates, sprite pooling, zoom behavior, UI overlays, and minimal operational state indicators. Local previews stay renderer state until a validated command.
 
 **Acceptance gate:**
 
@@ -267,6 +290,25 @@ Save format 3 adds the real estate; the rules version is unchanged, the format 1
 - **Proportions in the real app.** A Playwright test in the real app measures a garage and a large warehouse at the same zoom (the garage is smaller, in true proportion), a machine's pixel bounds against its footprint, and grid lines against cell boundaries.
 - **Floor rendering.** A fixture with mixed coverings renders each cell's material. Changing one cell's covering in the fixture redraws only its chunk and leaves every object sprite untouched. A floor of at least 40,000 cells renders with display objects bounded by the visible chunks, not by the cell count (counts recorded; no frame-rate claims before Step 33).
 - **Visual review.** A screenshot review of layout, operating and inspection modes, recorded in TEST_SCENARIOS, confirms that every view is overhead and that no sprite shows an angled face.
+
+**Gate verification (2026-11-08, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (Jest 61 suites / 702 tests), `npm run check:deps`, `npm run test:e2e` (31/31) and `npm run pack` passed. The gate is covered as follows:
+
+- **Same entity in every mode.** In the real app the bench is drawn with identical bounds in Operating, Layout and Inspection. Clicking it selects `equipment:1` in each mode, and the world fingerprint is unchanged by mode switches, zooming and screenshots (`factory-renderer.spec.ts`). In jsdom, every mode hands the scene the same objects and the same camera, and selects the same entity; panning and zooming send no command and no query (`factory-layout.test.tsx`).
+- **Transform and camera tests.** World ↔ screen round-trips exactly on the 250 mm lattice and for every whole millimetre at every zoom step (fast-check, 2,000 runs each). A 500 mm cell and a 3,658 × 1,829 mm footprint measure mm × px/m ÷ 1000 wherever the camera is. The camera's only fields are centre and zoom; north-up has equal scales, and the scene transform is scale plus translation. The map takes no mode argument. Zooming keeps the point under the pointer within 0.5 mm (`factory-camera.test.ts`).
+- **Proportions in the real app.** At 10 px/m the garage is drawn 30 × 58 px and a 24 × 40 m warehouse 240 × 400 px. The 1,800 × 750 mm bench measures 18 × 7.5, 36 × 15, 72 × 30 and 144 × 60 px at 10, 20, 40 and 80 px/m, at its real offset from the floor's corner. These are PixiJS's own bounds through the scene probe. Pixels read back from the canvas put the darkest pixel of each 20 px span on the 500 mm boundary within one pixel at 40 px/m, and switching the grid off changes those pixels (`factory-renderer.spec.ts`; `facility.spec.ts` and `city.spec.ts` now measure the canvas the same way).
+- **Floor rendering.** A 240 × 200-cell (48,000-cell) fixture with bands of three materials over the surface renders each cell's own colour, read back at cell centres. Changing one cell's covering redraws exactly one chunk and no equipment sprite (per-id redraw counts unchanged). Display objects stay bounded by the visible chunks: 25 at 80 px/m, 34 at 40, 64 at 20, 153 at 10, and 213 at 5 and 2.5 px/m, where all 195 chunks fit on screen. The same bounds hold in the model test (`floor-model.test.ts`, `factory-renderer.spec.ts`).
+- **Visual review.** Screenshots of the garage in all three modes at 80 px/m and of the fixture floor at 40 px/m were reviewed. Every view is straight overhead, the art shows top surfaces only (no side faces, no cast shadows), and the art fills exactly its footprint in all four quarter turns for all 19 catalog types (`equipment-art.test.ts`). Recorded in TEST_SCENARIOS.
+
+The packaged `FreeIndustry.exe` was smoke-tested with its profile redirected to a temporary directory (`--user-data-dir`), so nothing was written to the real profile. A warehouse was leased, the PixiJS scene loaded from `app.asar` and drew it, there was no CSP violation, and the probe was absent even with its environment variable set. Design is in DECISIONS ADR-0051. The city view stays SVG, which needs owner review (ADR-0042, ADR-0051).
+
+Limits:
+
+- Storage zones and docks as operational areas do not exist until Step 15. Loading-dock doors and storage equipment (racking, shelving) are drawn.
+- Nothing moves until Steps 12–13, so frames are drawn on demand. Every item shows an idle lamp.
+- The art is procedural placeholder art. The `docs/art/` concept packs are unused pending the Step 35 asset audit.
+- No frame-rate claims (Step 33).
+
+Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
 
 ## Step 09A — Floor coverings: purchase, installation and editing
 

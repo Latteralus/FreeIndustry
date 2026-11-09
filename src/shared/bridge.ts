@@ -1,4 +1,5 @@
 import type { ClockControl } from './ipc/clock';
+import type { QueryResult, SimulationQuery } from './ipc/facilities';
 import type { NewWorldRequest } from './ipc/real-estate';
 import type {
   ExportResult,
@@ -25,6 +26,11 @@ import type {
 export interface SimulationBridge {
   getSnapshot(): Promise<IpcResult<HostSnapshot>>;
   submitCommand(envelope: CommandEnvelope): Promise<IpcResult<CommandReceipt>>;
+  /**
+   * Ask the worker a read-only question about the current world (whether a
+   * placement would be allowed, and why not). Changes nothing (ADR-0050).
+   */
+  query(query: SimulationQuery): Promise<IpcResult<QueryResult>>;
   /**
    * Pause, run at a speed, or make a targeted advance (step, end of day,
    * end of week, next event). Changes pacing only, never the world.
@@ -71,6 +77,11 @@ export interface FreeIndustryBridge {
     readonly electron: string;
     readonly chrome: string;
     readonly node: string;
+    /**
+     * Whether the factory scene exposes its read-only measurement probe
+     * (`FREEINDUSTRY_SCENE_PROBE=1`, unpackaged runs only; ADR-0051).
+     */
+    readonly sceneProbe?: boolean;
   };
   readonly simulation: SimulationBridge;
   readonly saves: SavesBridge;

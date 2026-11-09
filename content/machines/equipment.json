@@ -1,0 +1,426 @@
+{
+  "equipment": [
+    {
+      "id": "steel-workbench",
+      "name": "Steel workbench",
+      "category": "assembly",
+      "description": "Welded steel bench with a 40 mm hardwood top and a lower shelf.",
+      "supplier": "Midwest Shop Equipment",
+      "priceCents": 28500,
+      "relocationCents": 4000,
+      "footprintMm": [1800, 750],
+      "heightMm": 900,
+      "weightKg": 95,
+      "powerVa": 0,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 1800, "depthMm": 800 }
+      ]
+    },
+    {
+      "id": "packing-bench",
+      "name": "Packing bench",
+      "category": "assembly",
+      "description": "Long bench with a carton rack and tape dispensers for packing finished goods.",
+      "supplier": "Midwest Shop Equipment",
+      "priceCents": 34000,
+      "relocationCents": 4000,
+      "footprintMm": [2000, 900],
+      "heightMm": 1500,
+      "weightKg": 110,
+      "powerVa": 0,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": [
+        "light-manufacturing",
+        "general-manufacturing",
+        "assembly",
+        "storage",
+        "distribution"
+      ],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 2000, "depthMm": 900 }
+      ]
+    },
+    {
+      "id": "floor-drill-press",
+      "name": "Floor-standing drill press",
+      "category": "machining",
+      "description": "Column drill with a 25 mm capacity, belt drive and a tilting table.",
+      "supplier": "Hollis Machine Tool Sales",
+      "priceCents": 98000,
+      "relocationCents": 9000,
+      "footprintMm": [600, 900],
+      "heightMm": 1750,
+      "weightKg": 210,
+      "powerVa": 750,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 600, "depthMm": 900 }
+      ]
+    },
+    {
+      "id": "horizontal-bandsaw",
+      "name": "Horizontal metal-cutting bandsaw",
+      "category": "machining",
+      "description": "Pivoting-bow bandsaw for bar and tube up to 250 mm, with stock feed and outfeed roller stands.",
+      "supplier": "Hollis Machine Tool Sales",
+      "priceCents": 315000,
+      "relocationCents": 18000,
+      "footprintMm": [2000, 900],
+      "heightMm": 1200,
+      "weightKg": 380,
+      "powerVa": 1500,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 600, "widthMm": 800, "depthMm": 900 },
+        { "kind": "input", "side": "left", "offsetMm": 250, "widthMm": 400, "depthMm": 1500 },
+        { "kind": "output", "side": "right", "offsetMm": 250, "widthMm": 400, "depthMm": 1200 }
+      ]
+    },
+    {
+      "id": "pedestal-grinder",
+      "name": "Pedestal grinder",
+      "category": "finishing",
+      "description": "Double-ended 200 mm grinder on a cast pedestal, with eye shields and tool rests.",
+      "supplier": "Hollis Machine Tool Sales",
+      "priceCents": 29500,
+      "relocationCents": 3500,
+      "footprintMm": [500, 500],
+      "heightMm": 1100,
+      "weightKg": 70,
+      "powerVa": 600,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 500, "depthMm": 800 }
+      ]
+    },
+    {
+      "id": "mig-welding-station",
+      "name": "MIG welding station",
+      "category": "fabrication",
+      "description": "250 A MIG set on a steel welding bench, with spatter screens either side.",
+      "supplier": "Brightline Welding Supply",
+      "priceCents": 185000,
+      "relocationCents": 12000,
+      "footprintMm": [1500, 1000],
+      "heightMm": 1000,
+      "weightKg": 260,
+      "powerVa": 7500,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 1500, "depthMm": 900 },
+        { "kind": "clearance", "side": "left", "offsetMm": 0, "widthMm": 1000, "depthMm": 500 },
+        { "kind": "clearance", "side": "right", "offsetMm": 0, "widthMm": 1000, "depthMm": 500 }
+      ]
+    },
+    {
+      "id": "engine-lathe",
+      "name": "Engine lathe, 1.5 m between centres",
+      "category": "machining",
+      "description": "Gap-bed centre lathe with 400 mm swing, quick-change gearbox and coolant tray.",
+      "supplier": "Hollis Machine Tool Sales",
+      "priceCents": 1420000,
+      "relocationCents": 65000,
+      "footprintMm": [2800, 1100],
+      "heightMm": 1450,
+      "weightKg": 1900,
+      "powerVa": 5500,
+      "threePhase": true,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 400, "widthMm": 2000, "depthMm": 1000 },
+        { "kind": "maintenance", "side": "back", "offsetMm": 0, "widthMm": 2800, "depthMm": 600 }
+      ]
+    },
+    {
+      "id": "vertical-mill",
+      "name": "Knee-type vertical milling machine",
+      "category": "machining",
+      "description": "Turret mill with a 1,270 mm table, power feed and digital readout.",
+      "supplier": "Hollis Machine Tool Sales",
+      "priceCents": 1680000,
+      "relocationCents": 70000,
+      "footprintMm": [1800, 1700],
+      "heightMm": 2200,
+      "weightKg": 1450,
+      "powerVa": 4000,
+      "threePhase": true,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 300, "widthMm": 1200, "depthMm": 1000 },
+        { "kind": "maintenance", "side": "back", "offsetMm": 0, "widthMm": 1800, "depthMm": 600 },
+        { "kind": "clearance", "side": "left", "offsetMm": 0, "widthMm": 1700, "depthMm": 400 },
+        { "kind": "clearance", "side": "right", "offsetMm": 0, "widthMm": 1700, "depthMm": 400 }
+      ]
+    },
+    {
+      "id": "sliding-table-panel-saw",
+      "name": "Sliding-table panel saw",
+      "category": "woodworking",
+      "description": "Panel saw with a 3.2 m sliding table and scoring blade; footprint 12 ft × 6 ft including the table.",
+      "supplier": "Ridgeway Woodworking Machinery",
+      "priceCents": 1190000,
+      "relocationCents": 48000,
+      "footprintMm": [3658, 1829],
+      "heightMm": 1100,
+      "weightKg": 760,
+      "powerVa": 5500,
+      "threePhase": true,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 1500, "depthMm": 1000 },
+        { "kind": "input", "side": "left", "offsetMm": 0, "widthMm": 1829, "depthMm": 2500 },
+        { "kind": "output", "side": "right", "offsetMm": 0, "widthMm": 1829, "depthMm": 1500 }
+      ]
+    },
+    {
+      "id": "edge-bander",
+      "name": "Automatic edge-banding machine",
+      "category": "woodworking",
+      "description": "Through-feed edge bander with glue pot, end trim and buffing stations.",
+      "supplier": "Ridgeway Woodworking Machinery",
+      "priceCents": 3850000,
+      "relocationCents": 160000,
+      "footprintMm": [6400, 1300],
+      "heightMm": 1600,
+      "weightKg": 2600,
+      "powerVa": 9000,
+      "threePhase": true,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 2000, "depthMm": 1000 },
+        { "kind": "input", "side": "left", "offsetMm": 0, "widthMm": 1300, "depthMm": 2500 },
+        { "kind": "output", "side": "right", "offsetMm": 0, "widthMm": 1300, "depthMm": 2500 }
+      ]
+    },
+    {
+      "id": "hydraulic-press-50t",
+      "name": "50-ton hydraulic press",
+      "category": "fabrication",
+      "description": "Four-post hydraulic press for blanking, forming and bending, with two-hand controls.",
+      "supplier": "Brightline Welding Supply",
+      "priceCents": 2450000,
+      "relocationCents": 115000,
+      "footprintMm": [1500, 1200],
+      "heightMm": 2800,
+      "weightKg": 3400,
+      "powerVa": 7500,
+      "threePhase": true,
+      "water": false,
+      "gas": false,
+      "uses": ["general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 250, "widthMm": 1000, "depthMm": 1000 },
+        { "kind": "maintenance", "side": "back", "offsetMm": 0, "widthMm": 1500, "depthMm": 700 }
+      ]
+    },
+    {
+      "id": "injection-moulder-80t",
+      "name": "80-tonne injection moulding machine",
+      "category": "plastics",
+      "description": "Toggle-clamp moulding machine with a 150 g shot, water-cooled mould and oil cooler.",
+      "supplier": "Kessler Plastics Machinery",
+      "priceCents": 6800000,
+      "relocationCents": 240000,
+      "footprintMm": [4600, 1500],
+      "heightMm": 2000,
+      "weightKg": 4800,
+      "powerVa": 30000,
+      "threePhase": true,
+      "water": true,
+      "gas": false,
+      "uses": ["general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 1500, "widthMm": 1800, "depthMm": 1000 },
+        { "kind": "maintenance", "side": "back", "offsetMm": 0, "widthMm": 4600, "depthMm": 800 },
+        { "kind": "input", "side": "left", "offsetMm": 0, "widthMm": 1500, "depthMm": 1000 },
+        { "kind": "output", "side": "front", "offsetMm": 3600, "widthMm": 1000, "depthMm": 800 }
+      ]
+    },
+    {
+      "id": "gas-curing-oven",
+      "name": "Gas-fired batch curing oven",
+      "category": "finishing",
+      "description": "Walk-in oven for curing powder coat and paint on racks, natural-gas burner.",
+      "supplier": "Kessler Plastics Machinery",
+      "priceCents": 1260000,
+      "relocationCents": 80000,
+      "footprintMm": [2400, 1800],
+      "heightMm": 2500,
+      "weightKg": 1700,
+      "powerVa": 2000,
+      "threePhase": true,
+      "water": false,
+      "gas": true,
+      "uses": ["light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 2400, "depthMm": 1500 },
+        { "kind": "clearance", "side": "back", "offsetMm": 0, "widthMm": 2400, "depthMm": 500 },
+        { "kind": "clearance", "side": "left", "offsetMm": 0, "widthMm": 1800, "depthMm": 500 },
+        { "kind": "clearance", "side": "right", "offsetMm": 0, "widthMm": 1800, "depthMm": 500 }
+      ]
+    },
+    {
+      "id": "air-compressor-7kw",
+      "name": "Rotary-screw air compressor, 7.5 kW",
+      "category": "utility",
+      "description": "Packaged screw compressor with dryer; supplies the shop air ring main.",
+      "supplier": "Midwest Shop Equipment",
+      "priceCents": 640000,
+      "relocationCents": 26000,
+      "footprintMm": [1000, 750],
+      "heightMm": 1050,
+      "weightKg": 290,
+      "powerVa": 10000,
+      "threePhase": true,
+      "water": false,
+      "gas": false,
+      "uses": ["light-manufacturing", "general-manufacturing", "assembly"],
+      "zones": [
+        { "kind": "maintenance", "side": "front", "offsetMm": 0, "widthMm": 1000, "depthMm": 800 },
+        { "kind": "clearance", "side": "back", "offsetMm": 0, "widthMm": 1000, "depthMm": 500 }
+      ]
+    },
+    {
+      "id": "belt-conveyor-3m",
+      "name": "Belt conveyor section, 3 m",
+      "category": "material-handling",
+      "description": "Powered flat-belt conveyor, 450 mm belt, for moving parts between stations.",
+      "supplier": "Lindqvist Materials Handling",
+      "priceCents": 290000,
+      "relocationCents": 21000,
+      "footprintMm": [3000, 600],
+      "heightMm": 850,
+      "weightKg": 180,
+      "powerVa": 750,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": [
+        "light-manufacturing",
+        "general-manufacturing",
+        "assembly",
+        "storage",
+        "distribution"
+      ],
+      "zones": [
+        { "kind": "maintenance", "side": "front", "offsetMm": 0, "widthMm": 3000, "depthMm": 600 },
+        { "kind": "input", "side": "left", "offsetMm": 0, "widthMm": 600, "depthMm": 600 },
+        { "kind": "output", "side": "right", "offsetMm": 0, "widthMm": 600, "depthMm": 600 }
+      ]
+    },
+    {
+      "id": "pallet-racking-bay",
+      "name": "Pallet racking bay",
+      "category": "storage",
+      "description": "One 2.7 m bay of adjustable pallet racking, 4.5 m high, two pallets per level; needs a truck aisle in front.",
+      "supplier": "Lindqvist Materials Handling",
+      "priceCents": 64000,
+      "relocationCents": 15000,
+      "footprintMm": [2700, 1100],
+      "heightMm": 4500,
+      "weightKg": 220,
+      "powerVa": 0,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["storage", "distribution", "light-manufacturing", "general-manufacturing"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 2700, "depthMm": 1000 },
+        { "kind": "clearance", "side": "front", "offsetMm": 0, "widthMm": 2700, "depthMm": 2500 }
+      ]
+    },
+    {
+      "id": "steel-shelving",
+      "name": "Steel shelving unit",
+      "category": "storage",
+      "description": "Boltless steel shelving, five shelves, for parts and supplies.",
+      "supplier": "Midwest Shop Equipment",
+      "priceCents": 9500,
+      "relocationCents": 2000,
+      "footprintMm": [1200, 450],
+      "heightMm": 2000,
+      "weightKg": 45,
+      "powerVa": 0,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": [
+        "storage",
+        "distribution",
+        "light-manufacturing",
+        "general-manufacturing",
+        "assembly",
+        "offices"
+      ],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 1200, "depthMm": 800 }
+      ]
+    },
+    {
+      "id": "office-desk",
+      "name": "Office desk with chair",
+      "category": "office",
+      "description": "Steel-framed desk with a pedestal of drawers and a swivel chair.",
+      "supplier": "Carrow Office Furniture",
+      "priceCents": 42000,
+      "relocationCents": 3000,
+      "footprintMm": [1500, 750],
+      "heightMm": 740,
+      "weightKg": 55,
+      "powerVa": 300,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["offices"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 1500, "depthMm": 900 }
+      ]
+    },
+    {
+      "id": "filing-cabinet",
+      "name": "Four-drawer filing cabinet",
+      "category": "office",
+      "description": "Steel filing cabinet for foolscap folders; drawers pull out to the front.",
+      "supplier": "Carrow Office Furniture",
+      "priceCents": 18500,
+      "relocationCents": 1500,
+      "footprintMm": [470, 620],
+      "heightMm": 1320,
+      "weightKg": 60,
+      "powerVa": 0,
+      "threePhase": false,
+      "water": false,
+      "gas": false,
+      "uses": ["offices", "storage"],
+      "zones": [
+        { "kind": "operator", "side": "front", "offsetMm": 0, "widthMm": 470, "depthMm": 900 }
+      ]
+    }
+  ]
+}

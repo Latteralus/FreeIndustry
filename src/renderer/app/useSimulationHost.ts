@@ -3,6 +3,7 @@ import type { SimulationBridge } from '../../shared/bridge';
 import type { ClockControl } from '../../shared/ipc/clock';
 import type { CommandType } from '../../shared/ipc/commands';
 import type { HostSnapshot, IpcError, IpcResult, WorldSnapshot } from '../../shared/ipc/contract';
+import type { QueryResult, SimulationQuery } from '../../shared/ipc/facilities';
 import type { NewWorldRequest } from '../../shared/ipc/real-estate';
 
 /**
@@ -35,6 +36,8 @@ export interface SimulationHostView {
     payload: unknown,
     against?: WorldSnapshot,
   ): Promise<RequestOutcome | null>;
+  /** Ask the worker a read-only question; null when it cannot be asked or failed. */
+  query(query: SimulationQuery): Promise<QueryResult | null>;
   control(control: ClockControl): Promise<void>;
   restartWorker(): Promise<void>;
   /** Replace the world with a new one; resolves to the new snapshot, or null if refused. */
@@ -122,6 +125,17 @@ export function useSimulationHost(
     [bridge, snapshot, newCommandId, refresh],
   );
 
+  const query = useCallback(
+    async (request: SimulationQuery): Promise<QueryResult | null> => {
+      if (!bridge) {
+        return null;
+      }
+      const result = await bridge.query(request);
+      return result.ok ? result.value : null;
+    },
+    [bridge],
+  );
+
   const newWorld = useCallback(
     async (request: NewWorldRequest): Promise<HostSnapshot | null> => {
       if (!bridge) {
@@ -180,5 +194,5 @@ export function useSimulationHost(
     }
   }, [bridge]);
 
-  return { snapshot, lastOutcome, pending, submit, control, restartWorker, newWorld };
+  return { snapshot, lastOutcome, pending, submit, query, control, restartWorker, newWorld };
 }

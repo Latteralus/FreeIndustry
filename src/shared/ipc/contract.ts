@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { IPC_PROTOCOL_VERSION } from './channels';
 import { ADVANCE_STOPS, ADVANCE_TARGETS, clockControlSchema, SIMULATION_SPEEDS } from './clock';
 import { companyViewSchema } from './company';
+import { facilitiesViewSchema, simulationQuerySchema } from './facilities';
 import { calendarSchema, simTimeString } from './primitives';
 import { newWorldRequestSchema, realEstateViewSchema, scenarioSummarySchema } from './real-estate';
 import { saveIdSchema, saveRequestSchema, workspaceUpdateSchema } from './saves';
@@ -231,6 +232,8 @@ export const worldSnapshotSchema = z.strictObject({
   company: companyViewSchema.nullable(),
   /** Cities, property and leases; null in worlds created before Step 07 (ADR-0040). */
   realEstate: realEstateViewSchema.nullable(),
+  /** Building layouts, equipment and floor coverings; null in worlds created before Step 08 (ADR-0048). */
+  facilities: facilitiesViewSchema.nullable(),
   /** The scenarios a new world can be started from (this build's content). */
   scenarios: z.array(scenarioSummarySchema).max(50),
   /** Kernel diagnostics (development only, ADR-0016/ADR-0024). */
@@ -289,6 +292,12 @@ export const rendererRequestSchema = z.discriminatedUnion('method', [
     envelope: commandEnvelopeSchema,
   }),
   z.strictObject({ protocolVersion, method: z.literal('simulation.restartWorker') }),
+  /** A read-only question about the world (ADR-0050); changes nothing. */
+  z.strictObject({
+    protocolVersion,
+    method: z.literal('simulation.query'),
+    query: simulationQuerySchema,
+  }),
   z.strictObject({
     protocolVersion,
     method: z.literal('simulation.newWorld'),

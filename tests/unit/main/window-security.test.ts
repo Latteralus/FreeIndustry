@@ -3,6 +3,7 @@ import {
   isAllowedExternalUrl,
   isAllowedNavigation,
   isTrustedRendererUrl,
+  SCENE_PROBE_ARGUMENT,
   secureWebPreferences,
   type RendererLocation,
 } from '../../../src/main/window-security';
@@ -30,6 +31,14 @@ describe('renderer window security baseline', () => {
 
   it('uses the supplied preload script', () => {
     expect(prefs.preload).toBe('C:\\app\\out\\preload\\index.cjs');
+  });
+
+  it('passes the scene probe argument only when asked, changing nothing else', () => {
+    expect(prefs).not.toHaveProperty('additionalArguments');
+    const probed = secureWebPreferences('C:\\app\\out\\preload\\index.cjs', { sceneProbe: true });
+    expect(probed.additionalArguments).toEqual([SCENE_PROBE_ARGUMENT]);
+    const { additionalArguments: _unused, ...rest } = probed;
+    expect(rest).toEqual(prefs);
   });
 });
 

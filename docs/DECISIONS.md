@@ -1311,7 +1311,9 @@ then contain another world).
 ## ADR-0042 — The cityscape and floor plans are SVG until the PixiJS renderer
 
 **Status:** Needs owner review · 2026-11-08 (Step 07). The "oblique view" mentioned below is
-superseded by ADR-0044: no oblique view will be built.
+superseded by ADR-0044: no oblique view will be built. Step 09 (ADR-0051) moved the factory
+interior to PixiJS and kept the city and floor plans in SVG; that choice still needs owner
+review.
 
 Spec §4.1 and §11.3 name PixiJS as the factory and city renderer (`CityScene`), and the
 dependency is installed for Step 09. Step 07 draws the district site plans, the regional
@@ -1622,3 +1624,359 @@ coverings that raise structural load (would let decoration change physics); purc
 renderer action or a cosmetic purchase that bypasses the books (spec §4.2, D02 spirit);
 folding the purchase workflow into Step 08 (it needs the renderer's selection tools from
 Step 09).
+
+**Amended by Step 08 (ADR-0047).** "Every installation balances to its journal entry" is
+implemented as: the installation names an existing entry in the company's books whose
+debits equal the installation's cost. It does not require the entry's source key to be the
+installation ID, because cash only ever moves through an invoice and its payment (ADR-0031),
+so a Step 09A order is recognised by the contractor's invoice entry.
+
+## ADR-0047 — Building structure and exact floor geometry
+
+**Status:** Accepted · 2026-11-08 (Step 08)
+
+Spec §5.1 and plan Step 08 ask for parcels, interior polygons, walls, columns, doors, docks,
+utility connections, levels, forbidden zones and usable floor area.
+
+**Model** (`src/domain/facility.ts`). Each property has one **building** record in the new
+facilities slice (ADR-0049): its starting floor surface (ADR-0046), its **parcel** (a
+rectangle in district site-plan millimetres that must contain the building; it defaults to
+the building's own footprint), its **levels**, **utility points** and **stairs**.
+
+- **Levels.** Level 0 is the ground floor and repeats the listing's outline, clear height and
+  slab rating (an invariant keeps them equal). An upper level (mezzanine, upper floor) has
+  its own outline inside the ground floor's, an elevation, a deck depth, a clear height and
+  its own slab rating, and needs at least one stair. Headroom under it is elevation − deck
+  depth, and equipment below must fit under it. Content: one mezzanine, in the industrial
+  unit at 20 Canal Street.
+- **Features** are axis-aligned integer-mm rectangles on a level: `column`, `wall`
+  (interior partition), `obstacle` (fixed plant, a transformer room) and `forbidden` (a zone
+  where nothing may be installed). Content may give columns as a grid of x and y centre
+  lines. A grid column outside an L-shaped floor is left out; one straddling a wall is a
+  content error.
+- **Doors and docks** stay on the listing (ADR-0037). Each door gets a clear landing inside
+  it: 1,000 mm deep for a personnel door, 1,500 mm for a roller shutter, 3,000 mm for a
+  loading dock (the dock's staging apron). Nothing may be installed there. Vehicle access
+  outside the building is left to receiving and dispatch (Steps 14 and 16).
+- **Utility points** (power intake, water point, gas meter) sit on a ground-floor wall,
+  placed like doors (edge, offset, width), with 1,000 mm of working space kept clear. Every
+  building has a power intake. Water and gas points need the listing's water or gas supply.
+  The content's points were placed once by an authoring script beside the personnel door
+  and then validated. Routing services to machines is Step 27.
+- **Stairs**: a flight on the lower level (structure), a foot landing on the lower level and
+  a head landing on the upper level, both kept clear.
+
+**Exact geometry** (`src/domain/region.ts`). A level's region is its outline minus
+rectangles. Cutting the plane along every x and y coordinate involved (coordinate
+compression) gives elementary rectangles that are each entirely inside or entirely outside.
+So the region is an exact list of disjoint rectangles, and area, overlap, containment and
+per-cell coverage follow in integer arithmetic.
+
+- The **floor region** is the outline minus columns, walls, obstacles and stair flights.
+  The **usable region** is the floor region minus forbidden zones (spec §5.1). Usable area is
+  the usable region's exact area.
+- Each 500 mm cell's covered area is the sum of its overlaps with those rectangles. A cell is
+  full, partial or outside accordingly, and the covered areas sum exactly to the usable area
+  (property-tested).
+
+**Walkways.** A person needs a clear way at least **800 mm** wide (`WALKWAY_WIDTH_MM`, a
+FreeIndustry value). Reachability is computed exactly: the walker is a square of 800 mm, the
+blocked set is the solid structure, everything outside the outline and every installed
+footprint, and the free positions of the walker's centre are found in doubled coordinates
+with each blocked rectangle grown by 799 doubled units. A gap of exactly 800 mm passes and a
+799 mm gap does not. The entrances are personnel-door landings (ground floor) and stair
+heads (upper levels).
+
+- **Every building must already be walkable when empty**: content validation checks that
+  every door, utility point and stair foot can be reached. A layout must keep them all
+  reachable, together with every operator station and maintenance area (ADR-0048).
+- The navigation graph for walking workers (Step 12) is separate. It is rebuilt from the
+  same exact geometry.
+
+**Content** (`content/real-estate/*.json`): every listing gains `surface` and `structure`.
+The content pack version becomes `freeindustry-base/2`. Worlds embed their content
+(ADR-0037), so existing worlds are unaffected.
+
+**Rejected:** a raster occupancy grid (would make cells authoritative, contrary to
+ADR-0045); arbitrary polygonal obstacles (rectangles compose any rectilinear shape and keep
+every test exact); a walkway check by sampling (not exact, and resolution-dependent).
+Forbidden zones are taken out of the usable region, as the spec says, so no equipment or
+floor covering goes there, but people may still walk through them.
+
+## ADR-0048 — Equipment: catalog, ownership, placement and its costs
+
+**Status:** Accepted · 2026-11-08 (Step 08)
+
+**Catalog** (`content/machines/equipment.json`, data only, validated by `check:content`):
+19 FreeIndustry types, from a steel workbench to an 80-tonne injection moulding machine.
+Each has a footprint in integer mm (a sliding-table panel saw is exactly 3,658 × 1,829 mm,
+12 ft × 6 ft), height, weight, electrical demand in VA, three-phase, water and gas needs,
+the uses its premises must permit, a dealer, a price and a rigging charge. Around the
+footprint, in the type's own frame, it has **zones**: operator stations, maintenance areas,
+safety clearances, and input and output ports. The names, dealers and 1996-style prices are
+invented; none come from the original game (ledger OR-31, OR-32, OR-83).
+
+**Frame.** At orientation 0 the type's width runs along x and its depth along y. Its front is
+the +y side (down the plan). Orientation is a clockwise quarter turn on the plan, and a placed
+item's position is the minimum corner of its turned footprint on the 250 mm lattice
+(ADR-0045).
+
+**Placement rules**, all on exact geometry (`src/domain/equipment.ts`), are reported in this
+order, each with the rectangle where it fails:
+
+1. on the 250 mm lattice; a quarter turn;
+2. the footprint fits inside the walls (the message gives both the footprint and the floor's
+   dimensions, or says to turn it);
+3. it is clear of structure, of the clear landings and of forbidden zones;
+4. it is clear of other equipment, of other items' zones, and its own zones lie on open
+   floor, clear of other footprints (zones may overlap each other: a shared aisle);
+5. its height fits under the clear height, including under a mezzanine;
+6. its weight over its footprint is within the slab's rating (`kg × 10⁶ ≤ rating × area`,
+   exact);
+7. a walkway reaches every door, utility point, stair foot, operator station and
+   maintenance area;
+8. the premises permit one of its uses;
+9. the building has the three-phase, water and gas it needs;
+10. the installed demand stays within the supply's kVA.
+
+Ports must be clear but need not be reachable yet. Conveyors and handling connect them in
+Step 15.
+
+**Ownership and money** (`src/domain/facilities.ts`, books ADR-0031):
+
+- `equipment.purchase { equipmentTypeId, quantity 1–20 }`: the dealer becomes a supplier
+  counterparty, invoices the price to **1500 Machinery and equipment** (an asset) and is paid
+  at once. It is refused with the figures if the funds do not cover it. The items are the
+  company's, **held by the dealer, uninstalled** (spec §5.4 `UNINSTALLED`).
+- `equipment.install`: the first installation is included in the price. It needs premises
+  the company leases, and every rule must hold.
+- `equipment.move` (within the building, level changes allowed) and a reinstallation after
+  `equipment.uninstall` are rigging jobs: the dealer invoices the type's charge to **6200
+  Equipment installation and relocation** (an expense), paid at once. Removal itself is
+  free. A move and an uninstall-then-install therefore cost the same. Freer moving and
+  turning than the original's reported "move but not rotate" is an extension (OR-33).
+- The two accounts are **opened the first time a rule posts to them** (`ensureAccount`), so
+  companies founded earlier keep exactly their books.
+- **At the end of a lease** the dealers take every item away before the keys are returned
+  (no charge). The items are held for reinstallation elsewhere (multi-site: Step 26).
+- Installing is instantaneous, done by the dealer's riggers, so no staff, transport or
+  downtime are involved yet. Delivery through the dock is Step 14, and an installed item is
+  idle until production (Step 13).
+- Invariants re-check every installed layout in full on every restore. They also check each
+  item's dealer, its purchase invoice and the invoice total.
+
+**Rejected:** placing on purchase (the plan asks for owned equipment that must be installed);
+charging a fee for removal as well (it would make a move cheaper than removing and
+reinstalling); free relocation (the ledger asks for paid relocation).
+
+## ADR-0049 — Save format 4; the rules version stays 1
+
+**Status:** Accepted · 2026-11-08 (Step 08)
+
+**State.** A new slice, `FreeIndustryState.facilities` (`Facilities | null`), holds the
+floor materials, the equipment catalog, every building record, the owned equipment, the
+covering layer and the installation records. It is null in worlds made before Step 08. Like
+the company and real estate (ADR-0033, ADR-0039), it is **left out of the encoding while
+absent**, so earlier worlds keep their fingerprints. **The rules version stays 1**: Step 08
+only adds commands, a slice and one step at a lease's end that does nothing when the slice
+is absent. A new world's setup becomes `{ realEstate, facilities }`. A bare real-estate
+setup still builds a Step 07-style world, and such a world refuses equipment with the reason.
+
+**Save format 4** (`src/persistence/schema-v4.ts`, migration 4), stored relationally:
+
+- the catalogs: `floor_materials`, `equipment_types`, `equipment_type_uses`,
+  `equipment_type_zones`;
+- the buildings: `buildings`, `building_levels`, `building_level_points`,
+  `building_features`, `building_utilities`, `building_stairs`;
+- `equipment`: all placement columns set or all null, enforced by a CHECK;
+- `floor_covering_installations`, and `floor_cell_coverings` with primary key (property,
+  level, col, row), as ADR-0046 prescribes.
+
+A plain floor stores no covering rows. `integrity.ts` adds:
+
+- every property has a building with a ground floor and an outline;
+- equipment stands only in premises someone leases;
+- every installation's cost equals the debits of its entry.
+
+The kernel's invariants catch the rest: a tampered overlap passes every SQL check and is still
+refused on load.
+
+**Fixtures.** The format 1, 2 and 3 fixtures upgrade to format 4 with a backup and reach
+their locked fingerprints. A new frozen fixture, `format-4-installed-equipment.fisave`,
+locks a laid-out industrial unit (a turned 3,658 × 1,829 mm saw, a bench moved on the
+mezzanine, a bench held by its dealer) to fixed fingerprints past the end of its lease.
+
+## ADR-0050 — Placement queries, the layout view and the zoom ladder
+
+**Status:** Accepted · 2026-11-08 (Step 08). It amends ADR-0042 (the drawings stay SVG until
+Step 09). Its "Layout view" section is superseded by ADR-0051 (Step 09): the factory is now
+drawn by the PixiJS scene with a centre-and-zoom camera. The query and read model stand.
+
+**Read-only query.** Layout previews need the worker's own verdict, and the renderer must
+not re-implement placement rules (spec §4.2). A new request, `simulation.query`, carries a
+`SimulationQuery`. It currently has one kind, `placement`; Step 09A adds the floor quote. It
+is validated in main (`rendererRequestSchema`) and again in the worker (`workerRequestSchema`)
+and goes bridge → main → worker, through the gateway's ordinary in-flight limit. The worker
+answers from the current world without changing it, and the answer is not journalled. It
+returns allowed or not, a refusal that comes before geometry, every problem with its
+rectangle, the proposed footprint and zones, and the rigging charge. The bridge gains
+`simulation.query`.
+
+**Read model.** `WorldSnapshot.facilities` holds:
+
+- the material and equipment catalogs; each type comes with its plan shape for spec-sheet
+  diagrams;
+- the owned items with their footprints and zones;
+- for the active premises, each level's outline, usable and outline areas, cell counts, the
+  eligible cells as row runs, the partial cells with their covered areas, the structure, the
+  clear landings and the coverings.
+
+The renderer formats this data; it computes no physical fact. A level's geometry is cached
+per immutable level in the worker.
+
+**Layout view.** The factory viewport draws the premises with SVG, as ADR-0042 already did,
+until the PixiJS renderer of Step 09:
+
+- everything is drawn in world millimetres inside one group scaled by pixels per metre ÷
+  1000, so the drawing cannot disagree with the geometry;
+- the construction grid is **one path** on exact 500 mm boundaries, clipped to the outline,
+  never one element per cell; there is an optional 250 mm sub-grid, which also switches
+  snapping from 500 to 250 mm;
+- layout mode (View → Factory Layout, or the toolbar's Factory button) adds the grid, a cell
+  inspector (full, partial or outside, covered area, material), a level selector, and the
+  placement tool: the preview follows the pointer on the lattice, R turns it, Esc cancels,
+  the worker's verdict and colliding rectangles are shown, and a click submits the command;
+- clicking an installed item selects it, with Move and Remove;
+- panning is by scrolling the viewport; a centre-and-zoom camera is Step 09.
+
+The Equipment Catalog (Catalog menu and toolbar) lists the types with spec sheets and to-scale
+diagrams, buys them, and lists owned items with Install, Move and Remove. The zoom ladder gains
+an 80 px/m step so a garage can be worked at 250 mm precision.
+
+**Rejected:** previews computed in the renderer from the read model (two implementations of
+the rules would drift apart); a placement "dry run" command in the journal (a question is not
+a world change).
+
+## ADR-0051 — The PixiJS factory scene: one camera, three modes, chunked floor, a test probe
+
+**Status:** Accepted · 2026-11-08 (Step 09). It replaces ADR-0050's SVG layout view and
+amends ADR-0042 (see "City view" below, which needs owner review).
+
+**Scene and boundary.** The factory viewport draws the premises with one PixiJS v8 scene
+(`src/renderer/scenes/factory/pixi/`), loaded on demand the first time a facility is shown.
+React owns presentation state (mode, camera, selection, hover, the placement preview) and
+hands the scene a complete frame; the scene draws it and reports what it drew. The scene
+never writes anything back, and nothing in it reaches the worker. The pure parts (camera,
+floor chunk model, scene model and diffs, hit test, art, pool) live beside it with no PixiJS
+import and are unit-tested in Node.
+
+**One projection, three modes.**
+
+- The camera is `{ centreXMm, centreYMm, zoomIndex }` and nothing else. Screen = (mm −
+  centre) × px/m ÷ 1000 + the viewport's whole-pixel centre. The scene graph receives a
+  uniform scale and a translation only.
+- The inverse resolves to 10⁻⁶ mm, so every whole millimetre and lattice point comes back
+  exactly; floating-point noise is about 10⁻¹⁴ mm.
+- Operating (default), Layout and Inspection share that camera. They differ only in
+  overlays: grid, sub-grid, cell inspector and placement tools in Layout; zones, keep-clear
+  landings and measured footprints in Inspection; state lamps in Operating and Inspection.
+  View offers the three as a radio group, and the toolbar's Factory button opens Layout.
+- Dragging pans, the wheel zooms one ladder step about the pointer, + and − zoom about the
+  centre, and the arrow keys pan. Centre recentres on the level. The centre is clamped to
+  the level plus 2 m.
+- Switching modes, panning and zooming send no command and change no world state.
+
+**Stable selection.** Every drawn object has its entity id (`equipment:3`, `door:0`,
+`feature:2`, `keep-clear:1`), and selection is a point-in-footprint test in millimetres in
+every mode. The selection is lifted to the desktop. The Equipment Catalog highlights the
+selected item, and its "Show on floor" selects an installed item and centres the view on it.
+The status strip shows the selected item's record in every mode. Move and Remove appear in
+Layout only.
+
+**Layers and drawing order.**
+
+- Bottom to top: floor coverings (masked to the outline), structure (columns, walls,
+  obstacles, forbidden zones, the outline wall, doors), the grid, zones, equipment, then
+  state lamps, selection, hover and the placement preview. Labels and measurements sit in a
+  screen-space layer so text stays crisp.
+- Equipment is stacked by layer, then height above the floor, then id. Nothing is sorted by
+  screen y.
+- Objects are applied as diffs by id (added, changed, removed). A sprite is redrawn only when
+  its own object changed. Sprites, floor-chunk sprites, the temporary cell sprites used to
+  draw chunks, and labels are pooled.
+- Frames are drawn on demand; there is no ticker, because nothing moves until Step 12.
+
+**Floor layer.**
+
+- Chunks are 16 × 16 cells (8 × 8 m). Each visible chunk is drawn once into a render texture
+  of whole pixels at the current zoom and shown as one sprite.
+- A chunk is redrawn only when one of its cells' coverings changes or the zoom step changes.
+  The model diffs successive worker views cell by cell.
+- Chunks out of view are culled; up to 96 spare textures are kept.
+- Level of detail: flat material colour below 20 px/m, otherwise each cell's atlas variant,
+  chosen by a fixed hash of its coordinates.
+- A material's joints are drawn at its own module from the level origin, so they are
+  continuous across cells and chunks and independent of the grid. They are drawn only when
+  at least 6 px apart.
+- The grid is one graphics object of 1 px lines on exact 500 mm boundaries, masked to the
+  outline. It is fainter as cells shrink on screen but present at every zoom.
+- Measured on a 48,000-cell fixture: 25 display objects at 80 px/m and 213 at 2.5 px/m,
+  where all 195 chunks are on screen. There is never one object per cell.
+
+**Art.** All of it is newly authored and procedural; nothing is copied from the original
+game.
+
+- Equipment art is vector primitives in each type's own frame (front at +y). The first
+  primitive is the housing, exactly the footprint, and everything lies inside it.
+- The art is mapped onto the worker's footprint by the domain's exact quarter-turn mapping.
+  Strokes are inner-aligned, so PixiJS's bounds of a sprite equal its footprint exactly.
+- Shading is flat and neutral: a lighter top panel and a darker edge, with no side faces and
+  no offset shadows.
+- Floor tiles (500 mm at 128 px/m) are drawn on a canvas from each material's colour and
+  texture family with a fixed seed.
+- The AI-generated concept packs under `docs/art/` are not used. Their cutouts are
+  approximate and not to scale, and their provenance needs the Step 35 asset audit before
+  anything ships.
+- Operational state: every installed item shows an idle lamp, and its record says idle until
+  production (Step 13).
+
+**Read model.** `floorMaterials` gains `textureSet` and `textureVariants` from the content.
+This is an IPC read-model field only. The save format and the rules version are unchanged.
+
+**CSP.** The scene module imports `pixi.js/unsafe-eval` first, so PixiJS compiles shaders
+without `eval` under the existing `script-src 'self'`. Pixi's asset loader, which uses
+workers, is not used; atlases are made from canvases. The renderer preference is WebGL, and
+`preserveDrawingBuffer` is on so pixels can be read back; it costs nothing because frames
+are drawn only on demand. The real app and the packaged build show no CSP violation.
+
+**Test seams.**
+
+- jsdom has no GPU. Jest's renderer project maps the scene module to a recording fake
+  (`tests/support/fake-factory-scene.ts`), so viewport tests assert what the scene is
+  given: mode, camera, objects, grid flags, selection and preview.
+- The real drawing is measured in the real app through a read-only **scene probe**,
+  `window.__freeIndustryScene`. It reports PixiJS's own bounds of a drawn object, pixels
+  read back from the canvas, counts, and a fixture level drawing.
+- The probe exists only when main starts the window with `FREEINDUSTRY_SCENE_PROBE=1`, which
+  packaged builds ignore like the other test overrides. Main passes
+  `additionalArguments: ['--freeindustry-scene-probe']`, the sandboxed preload reports it as
+  `runtime.sceneProbe`, and the renderer installs the probe.
+- A fixture changes only what is drawn. It is labelled "Test fixture drawing (not the
+  world)", and it lets floor rendering be measured before Step 09A can buy coverings.
+- `knip.json` no longer ignores `pixi.js`, which is now used.
+
+**City view (needs owner review).** ADR-0042 left open whether the city moves to a PixiJS
+`CityScene` (spec §11.3). Step 09 keeps the district site plans and the floor plans in SVG:
+each building stays a focusable DOM element with an accessible name and native tooltip, the
+plans are small, and they are already drawn to a fixed scale. A `CityScene` can follow if city
+views grow to thousands of objects (Step 30). This is a deviation from §11.3's scene list.
+
+**Rejected:**
+
+- One PixiJS object per cell, or a React element per cell: unbounded by the view.
+- Separate layout and operating scene classes: two code paths for one projection, the drift
+  ADR-0044 exists to prevent.
+- Using the concept-art PNGs: not to scale, not audited.
+- Measuring the canvas by screenshot decoding alone: it cannot name which object a pixel
+  belongs to; the probe reads PixiJS's own bounds and the pixels.
+- An always-on probe: test hooks stay out of packaged builds.

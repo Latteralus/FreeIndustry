@@ -7,437 +7,257 @@
     "machines": {
       "cnc_lathe": {
         "file": "machines/cnc_lathe.png",
-        "px": [
-          244,
-          105
-        ]
+        "px": [244, 105]
       },
       "drill_press": {
         "file": "machines/drill_press.png",
-        "px": [
-          106,
-          137
-        ]
+        "px": [106, 137]
       },
       "vertical_milling_machine": {
         "file": "machines/vertical_milling_machine.png",
-        "px": [
-          164,
-          135
-        ]
+        "px": [164, 135]
       },
       "hydraulic_press": {
         "file": "machines/hydraulic_press.png",
-        "px": [
-          123,
-          155
-        ]
+        "px": [123, 155]
       },
       "injection_molding_machine": {
         "file": "machines/injection_molding_machine.png",
-        "px": [
-          254,
-          118
-        ]
+        "px": [254, 118]
       },
       "extruder": {
         "file": "machines/extruder.png",
-        "px": [
-          215,
-          104
-        ]
+        "px": [215, 104]
       },
       "heat_treatment_oven": {
         "file": "machines/heat_treatment_oven.png",
-        "px": [
-          148,
-          153
-        ]
+        "px": [148, 153]
       },
       "sandblasting_cabinet": {
         "file": "machines/sandblasting_cabinet.png",
-        "px": [
-          149,
-          118
-        ]
+        "px": [149, 118]
       },
       "parts_washer": {
         "file": "machines/parts_washer.png",
-        "px": [
-          113,
-          117
-        ]
+        "px": [113, 117]
       },
       "deburring_machine": {
         "file": "machines/deburring_machine.png",
-        "px": [
-          120,
-          123
-        ]
+        "px": [120, 123]
       },
       "vibratory_finisher": {
         "file": "machines/vibratory_finisher.png",
-        "px": [
-          129,
-          128
-        ]
+        "px": [129, 128]
       },
       "spray_coating_booth": {
         "file": "machines/spray_coating_booth.png",
-        "px": [
-          188,
-          152
-        ]
+        "px": [188, 152]
       },
       "curing_oven": {
         "file": "machines/curing_oven.png",
-        "px": [
-          178,
-          130
-        ]
+        "px": [178, 130]
       },
       "shrink_wrap_machine": {
         "file": "machines/shrink_wrap_machine.png",
-        "px": [
-          186,
-          127
-        ]
+        "px": [186, 127]
       },
       "strapping_machine": {
         "file": "machines/strapping_machine.png",
-        "px": [
-          119,
-          119
-        ]
+        "px": [119, 119]
       }
     },
     "handling": {
       "robotic_arm": {
         "file": "handling/robotic_arm.png",
-        "px": [
-          97,
-          102
-        ]
+        "px": [97, 102]
       },
       "pick_and_place_unit": {
         "file": "handling/pick_and_place_unit.png",
-        "px": [
-          137,
-          110
-        ]
+        "px": [137, 110]
       },
       "palletizer": {
         "file": "handling/palletizer.png",
-        "px": [
-          137,
-          110
-        ]
+        "px": [137, 110]
       },
       "depalletizer": {
         "file": "handling/depalletizer.png",
-        "px": [
-          110,
-          115
-        ]
+        "px": [110, 115]
       },
       "roller_transfer_table": {
         "file": "handling/roller_transfer_table.png",
-        "px": [
-          100,
-          62
-        ]
+        "px": [100, 62]
       },
       "turn_conveyor_90": {
         "file": "handling/turn_conveyor_90.png",
-        "px": [
-          89,
-          102
-        ]
+        "px": [89, 102]
       },
       "sorter_diverter": {
         "file": "handling/sorter_diverter.png",
-        "px": [
-          147,
-          79
-        ]
+        "px": [147, 79]
       }
     },
     "pallets": {
       "wood_pallet_empty": {
         "file": "pallets/wood_pallet_empty.png",
-        "px": [
-          95,
-          86
-        ]
+        "px": [95, 86]
       },
       "plastic_pallet_empty": {
         "file": "pallets/plastic_pallet_empty.png",
-        "px": [
-          92,
-          89
-        ]
+        "px": [92, 89]
       },
       "mixed_parts_pallet": {
         "file": "pallets/mixed_parts_pallet.png",
-        "px": [
-          92,
-          91
-        ]
+        "px": [92, 91]
       },
       "shipping_crate_pallet": {
         "file": "pallets/shipping_crate_pallet.png",
-        "px": [
-          96,
-          91
-        ]
+        "px": [96, 91]
       }
     },
     "storage": {
       "bulk_rack_empty": {
         "file": "storage/bulk_rack_empty.png",
-        "px": [
-          101,
-          95
-        ]
+        "px": [101, 95]
       },
       "bulk_rack_loaded": {
         "file": "storage/bulk_rack_loaded.png",
-        "px": [
-          95,
-          95
-        ]
+        "px": [95, 95]
       },
       "shelving_empty": {
         "file": "storage/shelving_empty.png",
-        "px": [
-          78,
-          96
-        ]
+        "px": [78, 96]
       },
       "shelving_loaded": {
         "file": "storage/shelving_loaded.png",
-        "px": [
-          79,
-          93
-        ]
+        "px": [79, 93]
       },
       "cantilever_rack": {
         "file": "storage/cantilever_rack.png",
-        "px": [
-          100,
-          95
-        ]
+        "px": [100, 95]
       },
       "coil_storage_rack": {
         "file": "storage/coil_storage_rack.png",
-        "px": [
-          73,
-          96
-        ]
+        "px": [73, 96]
       },
       "drum_rack": {
         "file": "storage/drum_rack.png",
-        "px": [
-          111,
-          100
-        ]
+        "px": [111, 100]
       },
       "parts_bin_rack": {
         "file": "storage/parts_bin_rack.png",
-        "px": [
-          82,
-          94
-        ]
+        "px": [82, 94]
       }
     },
     "utilities": {
       "vertical_tank": {
         "file": "utilities/vertical_tank.png",
-        "px": [
-          72,
-          107
-        ]
+        "px": [72, 107]
       },
       "horizontal_tank": {
         "file": "utilities/horizontal_tank.png",
-        "px": [
-          110,
-          72
-        ]
+        "px": [110, 72]
       },
       "mixing_tank": {
         "file": "utilities/mixing_tank.png",
-        "px": [
-          73,
-          112
-        ]
+        "px": [73, 112]
       },
       "bulk_silo": {
         "file": "utilities/bulk_silo.png",
-        "px": [
-          68,
-          118
-        ]
+        "px": [68, 118]
       },
       "cooling_tower": {
         "file": "utilities/cooling_tower.png",
-        "px": [
-          82,
-          97
-        ]
+        "px": [82, 97]
       },
       "chiller": {
         "file": "utilities/chiller.png",
-        "px": [
-          91,
-          96
-        ]
+        "px": [91, 96]
       }
     },
     "building": {
       "solid_wall_module": {
         "file": "building/solid_wall_module.png",
-        "px": [
-          57,
-          80
-        ]
+        "px": [57, 80]
       },
       "window_wall_module": {
         "file": "building/window_wall_module.png",
-        "px": [
-          66,
-          82
-        ]
+        "px": [66, 82]
       },
       "office_wall_module": {
         "file": "building/office_wall_module.png",
-        "px": [
-          71,
-          81
-        ]
+        "px": [71, 81]
       },
       "mesh_partition": {
         "file": "building/mesh_partition.png",
-        "px": [
-          57,
-          80
-        ]
+        "px": [57, 80]
       },
       "safety_railing": {
         "file": "building/safety_railing.png",
-        "px": [
-          66,
-          44
-        ]
+        "px": [66, 44]
       },
       "safety_bollard": {
         "file": "building/safety_bollard.png",
-        "px": [
-          19,
-          60
-        ]
+        "px": [19, 60]
       },
       "floor_drain": {
         "file": "building/floor_drain.png",
-        "px": [
-          46,
-          40
-        ]
+        "px": [46, 40]
       },
       "utility_floor_hatch": {
         "file": "building/utility_floor_hatch.png",
-        "px": [
-          49,
-          59
-        ]
+        "px": [49, 59]
       }
     },
     "markings": {
       "work_zone": {
         "file": "markings/work_zone.png",
-        "px": [
-          56,
-          62
-        ]
+        "px": [56, 62]
       },
       "flow_arrow": {
         "file": "markings/flow_arrow.png",
-        "px": [
-          51,
-          45
-        ]
+        "px": [51, 45]
       },
       "hazard_marking": {
         "file": "markings/hazard_marking.png",
-        "px": [
-          61,
-          65
-        ]
+        "px": [61, 65]
       },
       "walkway_marking": {
         "file": "markings/walkway_marking.png",
-        "px": [
-          64,
-          72
-        ]
+        "px": [64, 72]
       },
       "loading_zone": {
         "file": "markings/loading_zone.png",
-        "px": [
-          67,
-          69
-        ]
+        "px": [67, 69]
       },
       "restricted_zone": {
         "file": "markings/restricted_zone.png",
-        "px": [
-          58,
-          73
-        ]
+        "px": [58, 73]
       }
     },
     "misc": {
       "workbench_with_tools": {
         "file": "misc/workbench_with_tools.png",
-        "px": [
-          85,
-          83
-        ]
+        "px": [85, 83]
       },
       "tool_cabinet": {
         "file": "misc/tool_cabinet.png",
-        "px": [
-          56,
-          74
-        ]
+        "px": [56, 74]
       },
       "wall_control_panel": {
         "file": "misc/wall_control_panel.png",
-        "px": [
-          54,
-          81
-        ]
+        "px": [54, 81]
       },
       "fire_extinguisher": {
         "file": "misc/fire_extinguisher.png",
-        "px": [
-          39,
-          72
-        ]
+        "px": [39, 72]
       },
       "spill_kit": {
         "file": "misc/spill_kit.png",
-        "px": [
-          48,
-          73
-        ]
+        "px": [48, 73]
       },
       "first_aid_box": {
         "file": "misc/first_aid_box.png",
-        "px": [
-          44,
-          40
-        ]
+        "px": [44, 40]
       }
     }
   },

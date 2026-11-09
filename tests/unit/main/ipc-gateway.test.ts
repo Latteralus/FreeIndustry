@@ -1,3 +1,4 @@
+import type { QueryResult, SimulationQuery } from '../../../src/shared/ipc/facilities';
 import fc from 'fast-check';
 import type { NewWorldRequest } from '../../../src/shared/ipc/real-estate';
 import {
@@ -75,6 +76,21 @@ class FakeWorker implements WorkerPort {
   control(control: ClockControl): Promise<IpcResult<WorldSnapshot>> {
     this.controls.push(control);
     return Promise.resolve(ipcOk(world));
+  }
+  readonly queries: SimulationQuery[] = [];
+  query(query: SimulationQuery): Promise<IpcResult<QueryResult>> {
+    this.queries.push(query);
+    return Promise.resolve(
+      ipcOk({
+        kind: 'placement' as const,
+        allowed: false,
+        refusal: 'No company has been founded yet',
+        problems: [],
+        footprint: null,
+        zones: [],
+        chargeCents: '0',
+      }),
+    );
   }
   readonly newWorlds: NewWorldRequest[] = [];
   newWorld(request: NewWorldRequest): Promise<IpcResult<WorldSnapshot>> {

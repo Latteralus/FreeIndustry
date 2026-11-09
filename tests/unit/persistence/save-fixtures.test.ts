@@ -236,17 +236,23 @@ const FIXTURE_3_DAY_200 = {
 };
 
 describe('frozen save fixtures: format 3', () => {
-  it('loads unmodified, with its embedded real estate and lease, and continues past the lease end', () => {
+  it('is upgraded on load with a backup, keeps its embedded real estate and lease, and continues past the lease end', () => {
     const store = makeStore(join(dir.path, 'saves'));
     copyFileSync(FIXTURE_3, store.pathOf('save-lease'));
-    const before = readFileSync(store.pathOf('save-lease'));
+    // Step 08 added save format 4 (facilities) without changing the rules (ADR-0049).
+    expect(store.inspect('save-lease')).toMatchObject({ status: 'needs-upgrade' });
+    const loaded = store.read('save-lease', verifyImage);
+    expect(loaded.upgradedFrom).toBe(3);
+    const backups = readdirSync(join(store.directory, 'backups'));
+    expect(backups).toHaveLength(1);
+    const backup = join(store.directory, 'backups', backups[0] ?? '');
+    expect(withDatabase(backup, { mode: 'read' }, readSchemaStamp).userVersion).toBe(3);
     expect(store.inspect('save-lease')).toMatchObject({
       status: 'ready',
       header: { seed: 19_960_107, nowMs: 8_683_200_000n, worldRevision: 1 },
     });
-    const loaded = store.read('save-lease', verifyImage);
-    expect(loaded.upgradedFrom).toBeNull();
-    expect(readFileSync(store.pathOf('save-lease')).equals(before)).toBe(true);
+    // A world from before Step 08 has no facilities: the slice is absent, not empty.
+    expect(loaded.image.domain.facilities).toBeNull();
     const world = restoreImage(loaded.image);
     expect(world.fingerprint()).toEqual(FIXTURE_3_AT_SAVE);
     const estate = world.state.realEstate;
@@ -262,6 +268,57 @@ describe('frozen save fixtures: format 3', () => {
     world.advanceTo(200n * MS_PER_DAY);
     expect(world.fingerprint()).toEqual(FIXTURE_3_DAY_200);
     expect(world.state.realEstate?.leases[0]?.status).toBe('ended');
+    expect(world.checkInvariants()).toEqual([]);
+  });
+});
+
+/**
+ * `format-4-installed-equipment.fisave`, written once by the Step 08
+ * `scripts/write-save-fixture.ts`: save format 4, rules v1, seed 19960108,
+ * at 12:00 on day 40. A company with $60,000 leases the industrial unit at
+ * 20 Canal Street for a year; a 3,658 × 1,829 mm panel saw stands turned a
+ * quarter on the ground floor, a workbench was installed on the mezzanine
+ * and then moved (a paid relocation), and a second bench is held by its
+ * dealer.
+ */
+const FIXTURE_4 = join(__dirname, '../../fixtures/saves/format-4-installed-equipment.fisave');
+const FIXTURE_4_AT_SAVE = {
+  stateHash: 'b949ce27816e56cb71f91deb0b1769f92f3cf14e042ad48b7baf7daa7a3019c9',
+  journalHash: 'f67b8e4fb8cf9cfa1d573d1f92311162e06e6d0b3d50a32906d22a175ab40eff',
+};
+const FIXTURE_4_DAY_400 = {
+  stateHash: '9a164f5702cb862e8181a56fe46e9151b8f5993914d6191e23f11a67788f0c7d',
+  journalHash: 'fa0235a92cd97652b8091a7c5d68306874487c3fcd403c4dae2eedf7d80a7fb4',
+};
+
+describe('frozen save fixtures: format 4', () => {
+  it('loads unmodified with its exact layout, and continues past the lease end', () => {
+    const store = makeStore(join(dir.path, 'saves'));
+    copyFileSync(FIXTURE_4, store.pathOf('save-layout'));
+    const before = readFileSync(store.pathOf('save-layout'));
+    expect(store.inspect('save-layout')).toMatchObject({
+      status: 'ready',
+      header: { seed: 19_960_108, nowMs: 3_499_200_000n, worldRevision: 6 },
+    });
+    const loaded = store.read('save-layout', verifyImage);
+    expect(loaded.upgradedFrom).toBeNull();
+    expect(readFileSync(store.pathOf('save-layout')).equals(before)).toBe(true);
+    const world = restoreImage(loaded.image);
+    expect(world.fingerprint()).toEqual(FIXTURE_4_AT_SAVE);
+    expect(world.state.facilities?.equipment.map((item) => [item.typeId, item.placement])).toEqual([
+      [
+        'sliding-table-panel-saw',
+        { propertyId: 'hf-canal-20', level: 0, xMm: 3000, yMm: 12000, rotation: 90 },
+      ],
+      [
+        'steel-workbench',
+        { propertyId: 'hf-canal-20', level: 1, xMm: 3000, yMm: 1500, rotation: 0 },
+      ],
+      ['steel-workbench', null],
+    ]);
+    world.advanceTo(400n * MS_PER_DAY);
+    expect(world.fingerprint()).toEqual(FIXTURE_4_DAY_400);
+    expect(world.state.facilities?.equipment.every((item) => item.placement === null)).toBe(true);
     expect(world.checkInvariants()).toEqual([]);
   });
 });

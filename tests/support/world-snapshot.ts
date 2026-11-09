@@ -29,6 +29,7 @@ export function sampleWorldSnapshot(
     },
     company: null,
     realEstate: null,
+    facilities: null,
     scenarios: [],
     diagnostics: {
       probeCount: 0,
