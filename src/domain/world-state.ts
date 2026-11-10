@@ -2,6 +2,7 @@ import type { Company } from './company';
 import type { DiagnosticsState } from './diagnostics';
 import type { Facilities } from './facilities';
 import type { RealEstate } from './real-estate';
+import type { Stock } from './stock';
 
 /**
  * The FreeIndustry domain state: everything the business rules own, one slice
@@ -23,4 +24,9 @@ export interface FreeIndustryState {
    * (ADR-0047, ADR-0048).
    */
   readonly facilities: Facilities | null;
+  /**
+   * Products, containers and every receipt, load unit, lot, movement and
+   * reservation; null in worlds created before Step 10 (ADR-0055).
+   */
+  readonly stock: Stock | null;
 }

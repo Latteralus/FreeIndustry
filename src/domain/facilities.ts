@@ -8,9 +8,14 @@ import {
   standing,
   type Equipment,
   type EquipmentType,
+  type FloorWorksArea,
   type Placement,
   type PlacementProblem,
+  type Standing,
+  type StockObstacle,
 } from './equipment';
+import { CONSTRUCTION_GRID_MM } from './region';
+import { activeLeaseOf } from './floor-works';
 import {
   buildingProblems,
   levelGeometry,
@@ -87,7 +92,11 @@ function occupies(realEstate: RealEstate, company: Company, propertyId: string):
 }
 
 /** Items installed in a building, as placement-check shapes, leaving out `except`. */
-function installedIn(facilities: Facilities, propertyId: string, except: string | null) {
+export function installedIn(
+  facilities: Facilities,
+  propertyId: string,
+  except: string | null,
+): Standing[] {
   return facilities.equipment.flatMap((item) => {
     const type = equipmentTypeOf(facilities, item.typeId);
     if (!type || item.placement?.propertyId !== propertyId || item.id === except) {
@@ -96,6 +105,15 @@ function installedIn(facilities: Facilities, propertyId: string, except: string 
     const shape = standing(item.id, type, item.placement);
     return shape ? [shape] : [];
   });
+}
+
+/** Whether the company holds `propertyId` by an active lease. */
+export function companyOccupies(
+  realEstate: RealEstate,
+  company: Company,
+  propertyId: string,
+): boolean {
+  return occupies(realEstate, company, propertyId);
 }
 
 /** Geometry of a level of a building, if both exist. */
@@ -231,6 +249,7 @@ export function checkPlacement(
     readonly equipmentId: string | null;
     readonly placement: Placement;
   },
+  stock: readonly StockObstacle[] = [],
 ): PlacementProblem[] | Rejection {
   if (!company) {
     return reject('No company has been founded yet');
@@ -253,7 +272,26 @@ export function checkPlacement(
     type,
     placement,
     installedIn(facilities, property.id, request.equipmentId),
+    worksAreas(facilities, property.id),
+    stock,
   );
+}
+
+/** Floor under a contractor's works in a building, as rectangles per order (ADR-0052). */
+export function worksAreas(facilities: Facilities, propertyId: string): FloorWorksArea[] {
+  const cell = CONSTRUCTION_GRID_MM;
+  return facilities.installations
+    .filter((job) => job.status === 'scheduled' && job.propertyId === propertyId)
+    .map((job) => ({
+      level: job.level,
+      label: job.id,
+      rects: job.runs.map(([row, from, to]) => ({
+        x: from * cell,
+        y: row * cell,
+        width: (to - from) * cell,
+        depth: cell,
+      })),
+    }));
 }
 
 function placementRefusal(problems: readonly PlacementProblem[]): Rejection {
@@ -336,6 +374,7 @@ export function placeEquipment(
   company: Company,
   request: { readonly equipmentId: string; readonly placement: Placement; readonly move: boolean },
   context: RuleContext,
+  stock: readonly StockObstacle[] = [],
 ): PlacedOutcome | Rejection {
   const item = equipmentOf(facilities, request.equipmentId);
   if (!item) {
@@ -357,11 +396,17 @@ export function placeEquipment(
   } else if (item.placement) {
     return reject(`The ${type.name} (${item.id}) is already installed; move it instead`);
   }
-  const problems = checkPlacement(facilities, realEstate, company, {
-    equipmentTypeId: type.id,
-    equipmentId: item.id,
-    placement: request.placement,
-  });
+  const problems = checkPlacement(
+    facilities,
+    realEstate,
+    company,
+    {
+      equipmentTypeId: type.id,
+      equipmentId: item.id,
+      placement: request.placement,
+    },
+    stock,
+  );
   if (problems instanceof Rejection) {
     return problems;
   }
@@ -589,6 +634,9 @@ export function facilitiesProblems(
       materials,
       geometryOf: (propertyId, level) => geometryOf(facilities, realEstate, propertyId, level),
       company,
+      leaseEndOf: (propertyId) =>
+        (company && activeLeaseOf(realEstate, company, propertyId)?.endsAtMs) ?? null,
+      surfaceOf: (propertyId) => buildingOf(facilities, propertyId)?.surfaceMaterialId ?? null,
     }),
   );
   return problems;

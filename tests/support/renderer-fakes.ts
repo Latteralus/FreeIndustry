@@ -42,16 +42,19 @@ export class FakeSimulation implements SimulationBridge {
   nextSubmit: IpcResult<never> | null = null;
   restarts = 0;
   readonly queries: SimulationQuery[] = [];
-  /** How placement queries are answered; allowed with no problems by default. */
-  answer: (query: SimulationQuery) => QueryResult = (query) => ({
-    kind: 'placement',
-    allowed: true,
-    refusal: null,
-    problems: [],
-    footprint: { x: query.xMm, y: query.yMm, width: 1000, depth: 1000 },
-    zones: [],
-    chargeCents: '0',
-  });
+  /** How queries are answered: placements allowed with no problems, floor quotes refused, by default. */
+  answer: (query: SimulationQuery) => QueryResult = (query) =>
+    query.kind === 'placement'
+      ? {
+          kind: 'placement',
+          allowed: true,
+          refusal: null,
+          problems: [],
+          footprint: { x: query.xMm, y: query.yMm, width: 1000, depth: 1000 },
+          zones: [],
+          chargeCents: '0',
+        }
+      : { kind: 'floorQuote', allowed: false, refusal: 'No quote in this test', quote: null };
 
   query(query: SimulationQuery): Promise<IpcResult<QueryResult>> {
     this.queries.push(query);

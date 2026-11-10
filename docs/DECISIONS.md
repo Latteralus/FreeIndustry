@@ -1505,9 +1505,9 @@ gain at 250 mm resolution).
 ## ADR-0046 — Floor coverings: a separate per-cell layer, data-driven, bought through the books
 
 **Status:** Accepted · 2026-11-08 (owner decision) for the layer model, data architecture and
-development path. The four points marked **Owner review** are recommended defaults and need
-the owner's confirmation before Step 09A. Data model: Step 08. Rendering: Step 09.
-Purchasing and editing: Step 09A.
+development path. Data model: Step 08. Rendering: Step 09. Purchasing and editing: Step 09A.
+The four **Owner review** points below were settled by the owner on 2026-11-08 before Step
+09A: timing and accounting differ from the recommended defaults (ADR-0052).
 
 **Layers.** A factory consists of six conceptual layers:
 
@@ -1588,7 +1588,9 @@ Who paid is recorded on the installation.
   explicit rectangles that the worker validates again. "A whole room" is the fill until rooms
   and zones exist (Step 15).
 
-**Owner review (recommended defaults):**
+**Owner review (recommended defaults; settled 2026-11-08, see ADR-0052):** the owner chose a
+**scheduled contractor job** for point 1 and **expense everything** for point 3, and accepted
+the defaults for points 2 and 4.
 
 1. **Timing.** Installation completes at the moment of the order, done by an outside
    contractor with no company staff. Alternative: a scheduled contractor job with a duration
@@ -1980,3 +1982,426 @@ views grow to thousands of objects (Step 30). This is a deviation from §11.3's 
 - Measuring the canvas by screenshot decoding alone: it cannot name which object a pixel
   belongs to; the probe reads PixiJS's own bounds and the pixels.
 - An always-on probe: test hooks stay out of packaged builds.
+
+## ADR-0052 — Floor works: a scheduled contractor job, expensed, quoted exactly; save format 5
+
+**Status:** Accepted · 2026-11-08 (Step 09A). The owner settled ADR-0046's four
+owner-review points before the step began:
+
+1. **Timing:** a scheduled contractor job, not an instant one.
+2. **Work under installed equipment** is allowed and leaves the equipment untouched.
+3. **Accounting:** everything is expensed, nothing capitalised.
+4. **End of lease:** coverings stay with the building. With everything expensed there is no
+   balance to write off, so this needs no posting.
+
+**The contractor and the job** (`src/domain/floor-works.ts`).
+
+- Every order goes to one outside firm, _Keystone Floor Contractors_ (a FreeIndustry
+  invention), which becomes a supplier counterparty. No company staff take part.
+- **Duration.** The work takes whole days. One crew's daily output, in m² per material
+  category, for laying the new material / taking up the old one:
+
+  | Category                   | Laid | Taken up |
+  | -------------------------- | ---: | -------: |
+  | Concrete                   |   80 |       60 |
+  | Polished concrete          |   60 |       60 |
+  | Painted concrete           |  200 |      300 |
+  | Epoxy                      |  100 |      150 |
+  | Steel plate, diamond plate |   50 |       80 |
+  | Anti-slip                  |  150 |      200 |
+  | Safety marking             |  250 |      300 |
+  | Office floors              |  120 |      200 |
+
+  Days = ⌈Σ area ÷ daily output⌉, computed exactly over a common denominator, and at least
+  one. One day of the crew's work is one simulated day from the order.
+
+- **Why rates by category.** They are domain constants keyed by the material's category, so
+  adding a material stays a content change. Putting them in the material data would have
+  changed the encoding, and so the fingerprint, of every world made since Step 08.
+- **Out of use meanwhile.** While a job is scheduled, its cells are _under works_:
+  - another floor order touching them is refused, naming the job and its finishing date;
+  - installing or moving equipment onto them is refused with a new placement problem,
+    `floor-works`, with the rectangle where it happens;
+  - equipment already standing there stays exactly as it is (point 2);
+  - people and walkways are not affected yet, because no one walks until Step 12.
+- **Completion** is a notable economic event, `facilities.floorWorksComplete`, scheduled when
+  the order is placed. It sets each cell's covering, naming the order, and marks the order
+  complete. It touches no equipment and no structure.
+- **Lease end.** An order that would finish after the lease ends is refused ("the contractor
+  would finish on …, after the lease … ends on …"). A job is therefore never under way on
+  premises the company no longer holds, and the lease-end event needs no new step.
+
+**Price** (ADR-0046's cost rule, made exact).
+
+- A selected cell already in the chosen material is skipped and not charged.
+- Every other cell is charged its exact covered area × the new material's installation price.
+- A cell with a covering record (an installed material) is a replacement. It is also charged
+  its area × the **old** material's removal price. A cell on the building's starting surface
+  has no removal charge.
+- **Rounding.** Exact amounts are cents × mm². The total is rounded half-up to whole cents
+  once per order. The installation line is its own exact amount rounded the same way, and
+  removal takes the rest, so the lines always sum to the total.
+- An order whose installation rounds to nothing is refused as too small to price.
+
+**Books** (owner decision: expense everything).
+
+- The contractor invoices the order and is paid at once, as equipment dealers are (ADR-0048).
+- The invoice entry debits **6300 Floor covering installation** and, for a replacement, **6310
+  Floor covering removal**, and credits payables. Both are expense accounts, opened the first
+  time a rule posts to them.
+- A replacement is therefore distinguishable from an installation in the chart of accounts,
+  in the entry and in the order record.
+- A refusal for want of funds gives both figures, like every other purchase.
+
+**The order record** (the installation record of ADR-0046, extended). It now holds:
+
+- the level and material;
+- the order and completion times;
+- the status (`scheduled` or `complete`);
+- the kind (`installation`, `replacement` or `mixed`, from how many cells were replacements);
+- the cells and replaced cells, with their exact areas;
+- the installation and removal charges and their sum;
+- the journal entry;
+- the changed cells as canonical **row runs**.
+
+The invariants refuse:
+
+- a covering not laid by a completed order whose cells include it, in that order's material;
+- sums, kinds, areas or runs that disagree with the cells;
+- an entry whose debits are not exactly the two charges, on 6300 and 6310;
+- a scheduled order on premises the company will not hold when it finishes;
+- two scheduled orders on one cell;
+- a scheduled order onto a cell that already has its material.
+
+A company may place at most 10,000 orders (bounded state; revisit with Step 33).
+
+**Command and query.**
+
+- The command is `facility.installFloorCovering { propertyId, level, materialId, rectangles }`
+  (ADR-0046), with 1–2,000 rectangles of cells. The worker refuses anything off the level's
+  grid and any cell outside the usable floor. It never clips a selection silently.
+- `simulation.query` gains `floorQuote`, with the same fields. Like the placement query
+  (ADR-0050), it is answered from the current world without changing it. It returns:
+  - the exact figures;
+  - whether the order would be accepted now;
+  - the refusal it would get, if any. An unaffordable order still shows what it costs.
+
+**Read model.**
+
+- Each level's `coverings` are now runs of one material from one order along a row:
+  `[row, firstCol, endCol, materialId, installationId]`. A fully covered 5,400 m² hall is
+  then hundreds of runs, not 21,600 objects in every snapshot.
+- Each level lists its `works`: the orders under way and their cells.
+- `floorOrders` lists every order with its charges and dates.
+
+**Layout floor tool** (`src/renderer/scenes/factory/FloorTool.tsx`, `floor-selection.ts`).
+
+- **Opening it.** Layout mode gains a **Floor coverings…** button. The new **Floor
+  Materials** window (Catalog menu) opens the tool with a chosen material through "Lay in
+  layout…".
+- **Selecting.**
+  - A single cell, a rectangle between two clicks (because dragging pans the plan), the
+    whole level, or a fill (the 4-connected cells with the same covering, not crossing
+    works).
+  - Shift adds to the selection. Esc clears it, and a second Esc closes the tool.
+- **Preview.** The selection is drawn in its material on the floor layer, so only its chunks
+  redraw, and outlined in the colour of the worker's verdict. Cells under works are hatched
+  in every mode. All of this is presentation state.
+- **Ordering.** The order carries the selection's eligible cells as explicit rectangles, which
+  the worker validates again. If no selected cell is eligible, the tool sends the raw cells,
+  so the worker's refusal is shown.
+- **Inspector.** The cell inspector names a cell's covering, the order that laid it, and any
+  works under way.
+
+**Save format 5** (`src/persistence/schema-v5.ts`, migration 5).
+
+- `floor_covering_installations` is rebuilt with the new columns, and a CHECK that the cost
+  is the sum of the two charges.
+- A new table, `floor_covering_installation_runs`, holds each order's cells.
+- No earlier build could create an order, so migration 5 requires both covering tables to be
+  empty and copies nothing. A format 4 save that somehow holds coverings is refused with that
+  reason.
+- **The rules version stays 1.** Worlds without orders encode exactly as before. The step
+  only adds a command, an event, a placement problem that needs works under way to arise, and
+  record fields that are empty in older worlds. The format 4 fixture upgrades and reaches its
+  locked fingerprints.
+- A new frozen fixture, `format-5-floor-works.fisave`, holds completed orders and one still
+  under way.
+
+**Fidelity.** No evidence shows floor coverings in the original (ledger OR-86, `EXTENDED`).
+The contractor, the durations and the prices are FreeIndustry's own.
+
+**Rejected:**
+
+- **An instant installation:** the owner chose a scheduled job.
+- **Capitalising installation as a leasehold improvement:** the owner chose to expense
+  everything.
+- **Paying on completion:** an order the company could no longer pay for at completion would
+  need a refusal or a debt then. Paying when ordering keeps the quote and the charge equal.
+- **Letting a job run past the lease end, then cancelling or refunding it:** that needs rules
+  for partial work.
+- **Durations in the material data:** they would change every Step 08 world's fingerprint.
+- **Clipping rectangles to the usable floor in the worker:** the spec asks for a refusal. The
+  layout tool clips its own selection instead, so what is ordered is exactly what was shown.
+
+## ADR-0053 — Products, exact quantities and containers
+
+**Status:** Accepted · 2026-11-09 (Step 10)
+
+Spec §5.3 and §12.1 ask for products with units, dimensions, weight and quality, counted
+lots and serialized goods, and load units with a capacity. Plan Step 10 asks for exact
+counts and mass/unit-conversion invariants.
+
+**Quantities** (`src/domain/stock.ts`).
+
+- A quantity is a `bigint` count of **millionths of the product's base unit** (spec §11.1
+  `QuantityMicro`). Base units are `each`, `kg` and `L`.
+- Every product declares a **quantum**: the smallest amount the simulation handles. It is
+  one item for anything counted (10⁶ µ, fixed), and one gram for a bulk solid or one
+  millilitre for a liquid in the base content. Every lot holds a whole number of quanta; a
+  quantity that is not one is refused ("2.5 screws", "25.0005 kg").
+- Each quantum has an exact **mass** in milligrams and an exact **volume** in mm³ (an item's
+  box from its dimensions, or a measured volume for bulk and liquids). Mass and volume of
+  any quantity are therefore exact integers and add up exactly.
+- **Pack units** (a box of 200, a 25 kg bag, a 3.785 L gallon) are whole numbers of quanta,
+  so counting and ordering units convert exactly.
+- **Display only:** pounds, US gallons and cubic feet are display conversions, rounded for
+  display (`src/renderer/app/units.ts`); metric display is the exact quantity. Nothing
+  displayed is fed back.
+- **Quality** is a grade code from the product's list (best first). Merging requires equal
+  grades. Step 27 brings the quality model.
+- **Cost.** A lot carries the exact cost of what it holds in whole cents. A part split off
+  takes `round-half-up(cost × part ÷ whole)` and the remainder keeps the rest, so costs
+  always add back exactly. A unit cost is only a display ratio.
+
+**Containers.** A container type has outside dimensions (its footprint is width × depth),
+an inside (the space contents may occupy; for a pallet or cart, the load envelope above the
+deck), a tare, a payload, the product forms it may hold, the kinds of load unit it may
+carry, and a mixing rule (`mixed`, `single-product`, `single-lot`). Kinds: pallet, crate,
+carton, tote, drum, bulk bag, cart, machine buffer.
+
+**Capacity rules** (`capacityProblems`), checked after every change and on every restore:
+
+1. it holds only the product forms it may (no liquid in a carton or on an open platform);
+2. every item and every carried unit fits the inside in some axis-aligned orientation (a
+   2,440 × 1,220 mm plywood sheet does not fit a 1,219 mm pallet; it needs the timber bunk);
+3. it carries only the kinds it may;
+4. its mixing rule holds, and **a bulk solid or a liquid is always one lot in its
+   container**: poured together, two lots blend and could no longer be told apart;
+5. the mass of its contents (lots plus the gross mass of carried units) is within the
+   payload;
+6. the volume of its contents (lots plus carried units' outsides) is within the inside.
+
+Volume is a bound, not a packing solution: exact 3D packing is not modelled, so cartons
+whose total volume fits a pallet's envelope are accepted even if a real stacker would
+arrange them differently. Revisit with storage layouts (Step 15).
+
+**Content** (`content/products/products.json`, `content/containers/containers.json`, part
+of `check:content`): seven products (studs, plywood, screws, steel sheet, HDPE pellets,
+enamel, serialized motors) and seven containers (48 × 40 in pallet, timber bunk, carton,
+crate, tote, 208 L drum, 1 t bulk bag). Names, sizes and masses are FreeIndustry's own,
+plausible for 1996 US industry; none come from the original game (ledger OR-87). Carts and
+machine buffers have no content yet: their first instances come with handling (Step 12) and
+machines (Step 13). The content pack version becomes `freeindustry-base/3`.
+
+**Rejected:** floating-point quantities (drift); a per-product decimal precision (two
+representations of one quantity); exact packing (out of scope; a bound is honest about it);
+storing a lot's cost as a unit price (fractional cents).
+
+## ADR-0054 — Lots in one load unit, load units in one place, and the operations on them
+
+**Status:** Accepted · 2026-11-09 (Step 10)
+
+**Model.**
+
+- A **lot** is in exactly one load unit while open (`loadUnitId`) and in none once closed.
+  It cannot be in two containers because it has one field for its container; the
+  invariants also check that every lot is listed once.
+- A **load unit** has exactly one location: on a **floor** (property, level, the exact
+  integer-mm minimum corner of its turned footprint and a quarter-turn orientation; not
+  bound to the 250 mm placement lattice, which is for construction), **in or on another
+  load unit** (never inside itself; at most four deep), or at an **equipment port**
+  (machine buffers only, Step 13).
+- **Genealogy.** A lot's origin is a receipt, a split (one parent) or a merge (two or more
+  parents, each closed into it). Parents always exist before their children, so the lineage
+  of any lot is finite and ends at the deliveries it came from (spec §5.5).
+- **Serials.** A serialized product's lot lists the serial of every item it holds. A serial
+  is held once in the world.
+- **Movements.** Every change is a `StockMovement` naming who handled it (`supplier`,
+  `company` or `employee`), the lot quantities taking part and the load units placed or
+  moved. With the lineage, it is the history of any lot or unit.
+- **Reservations** hold a quantity of an available lot for a purpose. Only unreserved stock
+  can be moved, split, merged, scrapped or lost, unless a transfer names the reservation,
+  which then follows its goods.
+
+**Operations** (`src/domain/stock-operations.ts`), each atomic and refused with the reason
+and nothing changed:
+
+- **Transfer** a quantity into another load unit: the whole lot moves as itself; a part
+  becomes a child lot with its share of the cost. The two units must be in one stack, or
+  within **600 mm** of each other on the same floor (`TRANSFER_REACH_MM`, a FreeIndustry
+  value: one person passing goods across without walking). Anything further is relocating
+  a load unit.
+- **Split** a lot in place (items only; part of a liquid cannot be told apart in its
+  drum); **merge** lots of one product, grade, disposition and owner in one unit.
+- **Relocate** a whole load unit to a floor position or onto or into another unit. This is
+  the commit at the moment of arrival (spec §9.3); the route and the time it takes are the
+  moving task's (Step 12). The destination is checked in full.
+- **Scrap**, a classification and the one stock command the player has: the quantity stays
+  where it is as a lot of disposition `scrap` (split off in place if part of a lot of
+  items), its cost is written down (Dr 5910 Inventory written down to scrap, Cr 1300
+  Inventory), and it can no longer be used or reserved. A liquid or bulk solid is scrapped
+  whole.
+- **Loss**: a quantity leaves the world for a recorded cause (`destroyed`, `spilled`,
+  `missing`) and its cost is written off (Dr 5900 Inventory losses, Cr 1300). **There is no
+  player command for a loss**: goods may not vanish without a physical cause (D02). Handling
+  (Step 12) and failures and quality (Step 27) will call it.
+
+**Until staff exist (Steps 11–12) only receipts and scrapping have a producer in the
+game.** Transfers, splits, merges, relocations, reservations and losses are implemented and
+tested in the domain (unit and property tests), as receivables were before sales
+(ADR-0031). They are not offered to the player as instant moves, because a move without a
+person, a route and elapsed time would be teleportation (spec §5.3).
+
+**Stock on the floor** (`src/domain/stock-floor.ts`) uses the same exact geometry as
+equipment:
+
+- on usable floor, clear of structure and no-installation zones;
+- clear of the landings at personnel doors, utility points and stairs. **The landing inside
+  a goods door (roller shutter, loading dock) is its receiving and staging area**, so stock
+  may stand there;
+- clear of equipment footprints and of their operator stations, maintenance areas and
+  safety clearances (ports are where material goes, so stock may stand there);
+- clear of other stock, and, for new placements, off floor still being laid;
+- within the clear height **fully loaded** (deck plus envelope for a platform), also under
+  a mezzanine;
+- gross mass over the footprint within the slab rating, exactly (1 kg/m² is 1 mg/mm²);
+- leaving the 800 mm walkways of ADR-0047 open.
+
+Consequences for existing rules:
+
+- **Equipment is now blocked by stock**: a new placement problem `stock` when a footprint
+  would stand on a load unit, `zone` when an operator, maintenance or clearance zone would,
+  and the walkway check counts stock as an obstacle. The placement preview is given the
+  same obstacles, so it never disagrees with the command. Worlds without stock are
+  unaffected.
+- **Floor works over stock** are allowed and leave it as it is, like equipment (ADR-0052).
+- **At the end of a lease** the stock stays where it stands, still owned and still in the
+  books, on premises the company no longer holds; the read model marks it. Moving it out
+  needs transport (Step 26). Nothing is silently unloaded (spec §10.4).
+
+**Books.** 1300 Inventory (asset), 5900 Inventory losses and 5910 Inventory written down to
+scrap (expenses) are opened the first time a rule posts to them (ADR-0048). The invariants
+require Inventory to equal the cost of the lots held, every receipt to match its own
+invoice, and every write-down and loss to be its own entry.
+
+**Invariants** (`src/domain/stock-invariants.ts`, on every restore and after every
+property-test step): conservation per product (held = received − lost); one container per
+lot and one place per unit; no cycles; capacity; floor placement and walkways; serials held
+once; provenance; reservations within their lots; the books as above.
+
+**Rejected:** a lot spread over several containers (it could then be "in two containers");
+moving whole lots only (no partial picks later); a separate table of fixed `locations`
+(spec §10.3's illustrative DDL), because every place a load unit can be is already an exact
+floor position, a carrier or a port; instant player transfers (teleportation); a "write off"
+button for losses (it would destroy goods without a cause).
+
+## ADR-0055 — The test delivery, the stock read model, the Stock window and stock in the factory view
+
+**Status:** Accepted · 2026-11-09 (Step 10)
+
+**How stock enters the world before purchasing.** Purchasing and receiving are Step 14. So
+that stock can be seen, inspected and classified now, the clearly labelled development
+command `diagnostics.deliverTestStock` has a fictional **Diagnostic supplier**
+(counterparty kind `diagnostic`) deliver goods, in the manner of the test obligations of
+ADR-0032:
+
+- the player names the product, container, count, quantity per container, optional pallets
+  and the **total cost**. It is invoiced to Inventory and paid at once (refused with both
+  figures if the funds do not cover it), so no stock arrives free;
+- one lot per container, costs shared to the cent;
+- the supplier's driver unloads every floor-standing unit onto the **landing inside a goods
+  door** of the company's premises, at the first place every floor rule allows (landings in
+  door order; the narrower way round along the wall first; flush against the wall first;
+  250 mm steps);
+- it is refused with nothing changed when any capacity or floor rule fails or there is no
+  room. The garage at 2 Canal Street takes one pallet at its roller shutter, because the
+  walkway to the shutter must stay open;
+- it is offered only in Simulation Diagnostics ("Test delivery (development only)") and
+  goes when Step 14 brings real receiving. Its receipts record `kind: 'diagnostic'`.
+
+**Read model.** `WorldSnapshot.stock` (`src/shared/ipc/stock.ts`, `src/worker/stock-view.ts`)
+holds:
+
+- the catalogs;
+- every load unit with its location (footprint; premises still held or not), gross and
+  contents mass, payload, used and available volume, lots, carried units and the colour
+  seen from above;
+- every open lot, and the receipts;
+- a **stock-take** that counts by walking every stack from the floor up and compares it
+  with the lots' record, by product and premises;
+- totals with the Inventory balance.
+
+A new `simulation.query` kind, `stockRecord`, returns a unit's or a lot's full record on
+demand: whereabouts, carriers, lots with serials, each lot's lineage back to its receipt,
+supplier and invoice, and its history (the latest 200 movements).
+
+**Stock window** (Operations → Stock…): load units, lots, stock-take and receipts tabs, and
+the selected unit's record with **Scrap…** on each available lot. The selection is shared
+with the factory view; "Show on floor" centres the view on a unit.
+
+**Factory view.**
+
+- Load units on a floor are scene objects of kind `load-unit` on their own layer above
+  equipment (spec §5.6 layer 5), keyed by entity id.
+- They are drawn top-down by new procedural art (`stock-art.ts`), mapped onto the exact
+  footprint by the same quarter-turn mapping as equipment, with flat neutral shading. A
+  loaded pallet shows its load from above in the goods' or cartons' colour with seams at the
+  carried units' size; a drum is a circle inscribed in its footprint.
+- A unit carried by another is not drawn separately: its carrier is, and the record lists
+  it (spec §5.3: draw the container, count the contents).
+- Clicking selects a load unit in every mode (stock lies over equipment in the hit test);
+  the status strip shows its record with "Contents and provenance…". Inspection mode labels
+  each unit with its id and gross mass.
+
+**Rejected:** starting stock in scenarios (Step 31's job, and it would hide the receiving
+gap); deliveries anywhere on the floor (a driver unloads at the door); one sprite per item.
+
+## ADR-0056 — Save format 6; the rules version stays 1
+
+**Status:** Accepted · 2026-11-09 (Step 10)
+
+**State.** A new slice, `FreeIndustryState.stock` (`Stock | null`), is null in worlds made
+before Step 10 and **left out of the encoding while absent**, so their fingerprints are
+unchanged. A new world's setup gains `stock` (the catalogs). **The rules version stays 1**:
+Step 10 only adds commands, a slice, and placement problems that need stock on the floor to
+arise.
+
+**Save format 6** (`src/persistence/schema-v6.ts`, migration 6, `stock-repository.ts`),
+relational and queryable (spec §10.2):
+
+- catalogs: `products`, `product_pack_units`, `product_grades`, `container_types`,
+  `container_type_holds`, `container_type_carries`;
+- `stock_receipts`; `load_units`, whose location columns hold exactly one shape (floor,
+  carrier or port, enforced by a CHECK);
+- `stock_lots` (a CHECK ties an open lot to a load unit and a closed one to none),
+  `stock_lot_parents`, `stock_lot_serials` (serials UNIQUE);
+- `stock_movements`, `stock_movement_lines`, `stock_movement_units` (the from and to
+  locations), and `stock_reservations`.
+
+Notes:
+
+- A receipt's lots and units are those that name it, in order, so they are not stored twice.
+- Self-references that can point forward (a carrier created after what it carries, a merge
+  into a later lot) are deferred foreign keys.
+- `integrity.ts` adds: lots only in their owner's units, receipts equal to their invoices,
+  write-offs equal to their entries. A consistent tamper (an extra screw) passes every SQL
+  check and is refused by the kernel's conservation invariant on load.
+- The spec's illustrative `locations` and `lot_contents` tables are not used (ADR-0054);
+  `stock_movements` and `stock_reservations` keep the spec's names, and `load_units` and
+  `stock_lots` hold what `locations` and `lot_contents` would have.
+
+**Fixtures.** The format 1–5 fixtures upgrade to format 6 with a backup and reach their
+locked fingerprints. A new frozen fixture, `format-6-stock.fisave`, holds four deliveries
+and two scrap classifications at the factory at 8 Northgate Drive, locked to fingerprints
+past the lease end.

@@ -16,7 +16,9 @@ export type WindowId =
   | 'saves'
   | 'help'
   | 'diagnostics'
-  | 'equipment';
+  | 'equipment'
+  | 'floor-materials'
+  | 'stock';
 
 export const WINDOW_CATALOG = new WindowCatalog<WindowId>([
   {
@@ -75,6 +77,18 @@ export const WINDOW_CATALOG = new WindowCatalog<WindowId>([
     title: 'Equipment Catalog',
     defaultBounds: { x: 640, y: 40, width: 620, height: 560 },
     minSize: { width: 420, height: 300 },
+  },
+  {
+    id: 'floor-materials',
+    title: 'Floor Materials',
+    defaultBounds: { x: 600, y: 60, width: 760, height: 540 },
+    minSize: { width: 460, height: 280 },
+  },
+  {
+    id: 'stock',
+    title: 'Stock',
+    defaultBounds: { x: 560, y: 50, width: 820, height: 600 },
+    minSize: { width: 480, height: 300 },
   },
   {
     id: 'diagnostics',

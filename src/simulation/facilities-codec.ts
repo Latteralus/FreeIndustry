@@ -4,7 +4,11 @@ import type { JsonValue } from '../shared/canonical-json';
 import { EQUIPMENT_CATEGORIES, SIDES, ZONE_KINDS } from '../domain/equipment';
 import type { Facilities } from '../domain/facilities';
 import { FEATURE_KINDS, UTILITY_KINDS } from '../domain/facility';
-import { FLOOR_MATERIAL_CATEGORIES, INSTALLATION_KINDS } from '../domain/floor-covering';
+import {
+  FLOOR_MATERIAL_CATEGORIES,
+  INSTALLATION_KINDS,
+  INSTALLATION_STATUSES,
+} from '../domain/floor-covering';
 import { isEntityIdOf, type EntityId } from '../domain/ids';
 import { isSlug, PERMITTED_USES } from '../domain/real-estate';
 import type { RectMm } from '../domain/region';
@@ -134,13 +138,22 @@ const facilitiesSchema = z.strictObject({
     z.strictObject({
       id: idOf('floor-installation'),
       propertyId: slug,
+      level: int,
+      materialId: slug,
       firmId: idOf('firm'),
       atMs: bigIntString,
+      completesAtMs: bigIntString,
+      status: z.enum(INSTALLATION_STATUSES),
       kind: z.enum(INSTALLATION_KINDS),
       cells: int,
       areaMm2: bigIntString,
+      replacedCells: int,
+      replacedAreaMm2: bigIntString,
+      installCents: bigIntString,
+      removalCents: bigIntString,
       costCents: bigIntString,
       journalEntryId: idOf('entry'),
+      runs: z.array(z.tuple([int, int, int])),
     }),
   ),
 });
@@ -252,13 +265,22 @@ export function encodeFacilities(facilities: Facilities): JsonValue {
     installations: facilities.installations.map((installation) => ({
       id: installation.id,
       propertyId: installation.propertyId,
+      level: installation.level,
+      materialId: installation.materialId,
       firmId: installation.firmId,
       atMs: big(installation.atMs),
+      completesAtMs: big(installation.completesAtMs),
+      status: installation.status,
       kind: installation.kind,
       cells: installation.cells,
       areaMm2: big(installation.areaMm2),
+      replacedCells: installation.replacedCells,
+      replacedAreaMm2: big(installation.replacedAreaMm2),
+      installCents: big(installation.installCents),
+      removalCents: big(installation.removalCents),
       costCents: big(installation.costCents),
       journalEntryId: installation.journalEntryId,
+      runs: installation.runs.map(([row, from, to]) => [row, from, to]),
     })),
   };
 }

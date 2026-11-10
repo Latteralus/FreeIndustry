@@ -39,7 +39,8 @@ export interface FactoryCanvasProps {
   readonly camera: Camera;
   readonly onCameraChange: (camera: Camera) => void;
   readonly onPointer: (at: WorldPoint | null) => void;
-  readonly onFloorClick: (at: WorldPoint) => void;
+  /** A click on the plan; `add` is true with Shift held (the floor tool adds to its selection). */
+  readonly onFloorClick: (at: WorldPoint, add: boolean) => void;
   readonly label: string;
 }
 
@@ -213,7 +214,7 @@ export function FactoryCanvas({
           suppressClick.current = false;
           return;
         }
-        onFloorClick(worldAt(event.clientX, event.clientY));
+        onFloorClick(worldAt(event.clientX, event.clientY), event.shiftKey);
       }}
       onWheel={onWheel}
       onKeyDown={onKeyDown}

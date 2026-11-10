@@ -28,6 +28,19 @@ import {
   type Property,
   type RealEstate,
 } from '../domain/real-estate';
+import {
+  BASE_UNITS,
+  CONTAINER_KINDS,
+  MIXING_RULES,
+  PRODUCT_CATEGORIES,
+  PRODUCT_FORMS,
+  TRACKING_KINDS,
+  boxVolumeMm3,
+  type ContainerType,
+  type Product,
+  type Stock,
+} from '../domain/stock';
+import { stockProblems } from '../domain/stock-invariants';
 import { isValidCivilDate, type CivilDate } from '../domain/time';
 
 /**
@@ -270,6 +283,69 @@ const equipmentFileSchema = z.strictObject({
     .max(500),
 });
 
+const box3 = z.tuple([
+  z.int().min(1).max(20_000),
+  z.int().min(1).max(20_000),
+  z.int().min(1).max(20_000),
+]);
+const colour = z.string().regex(/^#[0-9a-f]{6}$/);
+
+/** Products (Step 10, ADR-0053): quantities are exact; mass and volume are per quantum. */
+const productsFileSchema = z.strictObject({
+  products: z
+    .array(
+      z.strictObject({
+        id: slug,
+        name,
+        category: z.enum(PRODUCT_CATEGORIES),
+        description: text,
+        unit: z.enum(BASE_UNITS),
+        form: z.enum(PRODUCT_FORMS),
+        tracking: z.enum(TRACKING_KINDS),
+        /** Millionths of the base unit in the smallest quantity handled: 1,000,000 for one item, 1,000 for a gram or a millilitre. */
+        quantumMicro: z.int().min(1).max(1_000_000),
+        /** An item's size in mm; null for bulk solids and liquids. */
+        itemMm: box3.nullable(),
+        massPerQuantumMg: z.int().min(1).max(1_000_000_000),
+        /** Null for items (their dimensions give it). */
+        volumePerQuantumMm3: z.int().min(1).max(1_000_000_000_000).nullable(),
+        packUnits: z
+          .array(z.strictObject({ id: slug, name, quanta: z.int().min(1).max(10_000_000) }))
+          .max(8),
+        grades: z
+          .array(z.strictObject({ code: slug, name }))
+          .min(1)
+          .max(6),
+        colour,
+      }),
+    )
+    .min(1)
+    .max(1000),
+});
+
+/** Containers and load units (Step 10, ADR-0053). */
+const containersFileSchema = z.strictObject({
+  containers: z
+    .array(
+      z.strictObject({
+        id: slug,
+        name,
+        kind: z.enum(CONTAINER_KINDS),
+        description: text,
+        outerMm: box3,
+        innerMm: box3,
+        tareMassG: z.int().min(1).max(10_000_000),
+        payloadMassG: z.int().min(1).max(10_000_000),
+        holds: z.array(z.enum(PRODUCT_FORMS)).max(3),
+        carries: z.array(z.enum(CONTAINER_KINDS)).max(8),
+        mixing: z.enum(MIXING_RULES),
+        colour,
+      }),
+    )
+    .min(1)
+    .max(200),
+});
+
 const isoDate = z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/, 'Expected a date (YYYY-MM-DD)');
 
 const scenariosFileSchema = z.strictObject({
@@ -306,6 +382,8 @@ const manifestSchema = z.strictObject({
   scenarios: fileName,
   floorMaterials: fileName,
   equipment: fileName,
+  products: fileName,
+  containers: fileName,
 });
 
 /** The raw JSON documents of a content pack, by file name. */
@@ -315,6 +393,8 @@ export interface ContentSources {
   readonly scenarios: Readonly<Record<string, unknown>>;
   readonly floorMaterials: Readonly<Record<string, unknown>>;
   readonly equipment: Readonly<Record<string, unknown>>;
+  readonly products: Readonly<Record<string, unknown>>;
+  readonly containers: Readonly<Record<string, unknown>>;
 }
 
 interface QuickStart {
@@ -343,6 +423,8 @@ export interface ContentCatalog {
   readonly realEstate: Omit<RealEstate, 'scenario' | 'contentVersion'>;
   /** Materials, equipment and building structure every new world starts from: nothing owned. */
   readonly facilities: Facilities;
+  /** The product and container catalogs every new world starts from: no stock (Step 10). */
+  readonly stock: Stock;
   readonly scenarios: readonly Scenario[];
 }
 
@@ -770,6 +852,8 @@ export function validateContent(sources: ContentSources): ContentResult {
     problems.push(...facilitiesProblems(facilities, realEstate, null));
   }
 
+  const stock = stockCatalog(sources, manifest.data, problems);
+
   const scenarioFile = sources.scenarios[manifest.data.scenarios];
   const scenarios: Scenario[] = [];
   const parsedScenarios = scenariosFileSchema.safeParse(scenarioFile);
@@ -837,9 +921,94 @@ export function validateContent(sources: ContentSources): ContentResult {
       contentVersion: realEstate.contentVersion,
       realEstate: { cities, districts, businesses, properties, leases: [] },
       facilities,
+      stock,
       scenarios,
     },
   };
+}
+
+/**
+ * The product and container catalogs (Step 10, ADR-0053). Problems are
+ * appended to `problems`; the catalog returned is only used when there are
+ * none.
+ */
+function stockCatalog(
+  sources: ContentSources,
+  manifest: z.infer<typeof manifestSchema>,
+  problems: string[],
+): Stock {
+  const products: Product[] = [];
+  const productsFile = sources.products[manifest.products];
+  const parsedProducts = productsFileSchema.safeParse(productsFile);
+  if (productsFile === undefined) {
+    problems.push(`manifest.json names ${manifest.products}, which was not provided`);
+  } else if (!parsedProducts.success) {
+    problems.push(...zodProblems(manifest.products, parsedProducts.error));
+  } else {
+    for (const product of parsedProducts.data.products) {
+      const itemMm = product.itemMm && {
+        width: product.itemMm[0],
+        depth: product.itemMm[1],
+        height: product.itemMm[2],
+      };
+      if ((product.volumePerQuantumMm3 === null) !== (itemMm !== null)) {
+        problems.push(
+          `${manifest.products}: ${product.id}: give item dimensions or a volume per quantum, not both`,
+        );
+        continue;
+      }
+      products.push({
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        description: product.description,
+        unit: product.unit,
+        form: product.form,
+        tracking: product.tracking,
+        quantumMicro: BigInt(product.quantumMicro),
+        itemMm,
+        massPerQuantumMg: BigInt(product.massPerQuantumMg),
+        volumePerQuantumMm3: itemMm
+          ? boxVolumeMm3(itemMm)
+          : BigInt(product.volumePerQuantumMm3 ?? 0),
+        packUnits: product.packUnits,
+        grades: product.grades,
+        colour: product.colour,
+      });
+    }
+  }
+  const containerTypes: ContainerType[] = [];
+  const containersFile = sources.containers[manifest.containers];
+  const parsedContainers = containersFileSchema.safeParse(containersFile);
+  if (containersFile === undefined) {
+    problems.push(`manifest.json names ${manifest.containers}, which was not provided`);
+  } else if (!parsedContainers.success) {
+    problems.push(...zodProblems(manifest.containers, parsedContainers.error));
+  } else {
+    const box = ([width, depth, height]: readonly [number, number, number]) => ({
+      width,
+      depth,
+      height,
+    });
+    for (const type of parsedContainers.data.containers) {
+      containerTypes.push({
+        ...type,
+        outerMm: box(type.outerMm),
+        innerMm: box(type.innerMm),
+      });
+    }
+  }
+  const stock: Stock = {
+    products,
+    containerTypes,
+    receipts: [],
+    loadUnits: [],
+    lots: [],
+    movements: [],
+    reservations: [],
+  };
+  problems.push(...stockProblems(stock, null, null, null));
+  return stock;
 }
 
 /** The real estate a new world in `scenario` starts with. */

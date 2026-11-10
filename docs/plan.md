@@ -312,29 +312,29 @@ Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** t
 
 ## Step 09A — Floor coverings: purchase, installation and editing
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
-Added 2026-11-08 by owner decision (DECISIONS ADR-0046). It depends on Steps 05 (books), 08 (cells and the covering layer) and 09 (renderer and selection) and nothing later depends on it, so it may be moved later without breaking the order. Settle ADR-0046's four **Owner review** points (timing, work under equipment, accounting treatment, end of lease) before starting.
+Added 2026-11-08 by owner decision (DECISIONS ADR-0046). It depends on Steps 05 (books), 08 (cells and the covering layer) and 09 (renderer and selection) and nothing later depends on it, so it may be moved later without breaking the order. ADR-0046's four **Owner review** points (timing, work under equipment, accounting treatment, end of lease) were settled before starting (see below).
 
 **Build:**
 
-- [ ] A read-only quote request and a validated, idempotent `facility.installFloorCovering` command:
+- [x] A read-only quote request and a validated, idempotent `facility.installFloorCovering` command:
   - cells as rectangles in cell coordinates;
   - refusal with nothing changed for cells that are not eligible, an unknown material, premises the company does not hold, or insufficient funds (shown with the figures);
   - cells already in the chosen material are skipped and not charged.
-- [ ] Exact cost from covered area:
+- [x] Exact cost from covered area:
   - installation price for initial installation;
   - removal of the old material plus installation of the new for replacement, posted separately;
   - `bigint` arithmetic, rounded once per order;
   - one balanced journal entry per order through the existing books;
   - an installation record of who paid, when, what and how much.
-- [ ] Layout-mode floor tools:
+- [x] Layout-mode floor tools:
   - select a single cell, a rectangle, the whole level, or a contiguous fill;
   - preview the material in place and show the cost before buying;
   - replace existing coverings and mix materials in one building.
   - The fill is computed for the preview and submitted as explicit rectangles that the worker validates again.
-- [ ] A Floor Materials catalog window listing the data-driven materials with prices and samples. The covering of a selected cell is shown in its inspector.
-- [ ] Persistence of installations and coverings in the save format, a frozen fixture, and the upgrade of earlier fixtures.
+- [x] A Floor Materials catalog window listing the data-driven materials with prices and samples. The covering of a selected cell is shown in its inspector.
+- [x] Persistence of installations and coverings in the save format, a frozen fixture, and the upgrade of earlier fixtures.
 
 **Acceptance gate:**
 
@@ -346,20 +346,110 @@ Added 2026-11-08 by owner decision (DECISIONS ADR-0046). It depends on Steps 05 
 - **Save/load.** Coverings and installations survive save, quit, relaunch and load with identical fingerprints.
 - **Property test.** Random orders keep the books balanced and every covered cell eligible.
 
+**Owner decisions (2026-11-08, before the step).** ADR-0046's four owner-review points were settled:
+
+- **Timing:** a scheduled contractor job, with the cells out of use until it is finished.
+- **Work under equipment:** allowed; the equipment stays as it is.
+- **Accounting:** everything is expensed.
+- **End of lease:** coverings stay with the building.
+
+Design is in DECISIONS ADR-0052.
+
+**Gate verification (2026-11-08, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (Jest 66 suites / 737 tests), `npm run check:deps`, `npm run test:e2e` (32/32) and `npm run pack` passed. The gate is covered as follows:
+
+- **Spec scenario S11 passes headless and in the real app.**
+  - The building is the L-shaped factory at 8 Northgate Drive. Its 400 mm columns each leave four partial cells of 210,000 mm².
+  - A bench stands beside column A1. A 10 × 10 rectangle of grey epoxy covers the bench and the column's partial cells, and is then filled over in steel plate.
+  - Each order is quoted and charged exactly; the refusals change nothing; the bench and the slab are unchanged.
+  - The floor is drawn overhead in all three modes and survives save and load (`s11-floor-coverings.test.ts`).
+  - In the real app the same is done through Catalog → Floor Materials and the layout floor tool, with pixel checks in Operating, Layout and Inspection and a save, quit, relaunch and load with identical fingerprint, facilities and books (`floor-coverings.spec.ts`).
+- **Exact charges.**
+  - The epoxy rectangle is 24.84 m², not 25: the column's four partial cells are charged their share, $1,366.20 in all. Cash falls by exactly the quoted amount.
+  - A partial garage cell of 0.15 m² costs $8.25, and the whole garage 17.4 m², not 18.
+  - The steel-plate fill posts laying ($4,471.20) to 6300 and taking up the epoxy ($397.44) to 6310 in the same balanced entry, and the order is recorded as a replacement (`floor-works-rules.test.ts`).
+- **Refusals.** Each of these is refused with the fingerprint unchanged:
+  - a cell in the building's missing corner, and a rectangle reaching into it;
+  - an unknown material, and one that is not sold;
+  - premises the company does not hold;
+  - an order the funds do not cover (with both figures), shown with its full price in the quote;
+  - work that would finish after the lease ends.
+- **Floor under equipment.** Replacing the floor under a bench, twice, leaves its record identical. Placing equipment on cells under works is refused until the contractor finishes.
+- **Structure untouched.** The slab's load rating and the building record are the same object before and after every order. The property test checks the slab after every script.
+- **Save/load.**
+  - Completed orders and an order still under way round-trip through save format 5 and finish identically (`facilities-save.test.ts`).
+  - The format 1–4 fixtures upgrade to format 5 with a backup and reach their locked fingerprints.
+  - A new frozen `format-5-floor-works.fisave` loads unmodified, finishes its order and reaches locked day-400 fingerprints.
+  - The real app saves, quits, relaunches and loads S11 identically.
+- **Property test.** 60 random scripts of orders keep the books balanced and every covered cell eligible (`tests/properties/floor-works.test.ts`). Accepted orders move cash by exactly their cost, and refusals change nothing.
+
+The packaged `FreeIndustry.exe` was smoke-tested with its profile redirected to a temporary directory: a floor quote and order went through the packaged IPC path, the probe was absent, and there was no CSP violation. Screenshots of the preview and the three modes were reviewed and recorded in TEST_SCENARIOS.
+
+Limits:
+
+- One crew per job and calendar days of work. There are no working hours, and walkways are not blocked by works (no one walks until Step 12).
+- Coverings have no gameplay effect beyond appearance and cost (spec §5.6).
+- One contractor serves every city.
+
+Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
+
 # Phase C — Tangible manufacturing vertical slice
 
 ## Step 10 — Physical stock, lots, load units, and conservation
 
-- [ ] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
+- [x] **Step accepted:** All implementation tasks and the acceptance gate below are verified.
 
 **Build:**
 
-- [ ] Define products, units, dimensions, weight, quality, serialized goods, counted lots, ownership, locations, genealogy, and quantity reservations.
-- [ ] Introduce containers/pallets/stacks/carts/machine buffers with capacity, exact counted contents, physical coordinates, and inspectable histories.
-- [ ] Implement atomic transfers, split/merge constraints, origin tracking, stock-taking, loss/scrap classification, and negative-stock prevention.
-- [ ] Render the real location of each on-premises stock unit; aggregate bulk quantities visually only inside a countable, inspectable physical container.
+- [x] Define products, units, dimensions, weight, quality, serialized goods, counted lots, ownership, locations, genealogy, and quantity reservations.
+- [x] Introduce containers/pallets/stacks/carts/machine buffers with capacity, exact counted contents, physical coordinates, and inspectable histories.
+- [x] Implement atomic transfers, split/merge constraints, origin tracking, stock-taking, loss/scrap classification, and negative-stock prevention.
+- [x] Render the real location of each on-premises stock unit; aggregate bulk quantities visually only inside a countable, inspectable physical container.
 
 **Acceptance gate:** Stock cannot materialize between locations or be assigned to two containers. Quantity and mass/unit-conversion invariants pass property-based tests; the player can click a container and see its contents and provenance.
+
+Design is in DECISIONS ADR-0053 – ADR-0056.
+
+**Gate verification (2026-11-09, Windows 11, Node 24.22.1, npm 12.2.2):** passed in the working copy. `npm run check` (`check:content` now also validates 7 products and 7 container types, content `freeindustry-base/3`; Jest 72 suites / 812 tests), `npm run check:deps`, `npm run test:e2e` (33/33) and `npm run pack` passed. The gate is covered as follows:
+
+- **Stock cannot materialize between locations.**
+  - Goods enter only by a receipt (until Step 14, the labelled development test delivery, paid in full to Inventory) and leave only by a recorded loss.
+  - The conservation invariant (held = received − lost, product by product) runs on every restore. An extra screw written into a save passes every SQL check and is refused on load (`stock-save.test.ts`, `stock-operations.test.ts`).
+  - Moving stock between places needs a person, a route and time (Step 12). Until then no command moves it; a transfer between load units needs them within 600 mm (`stock-operations.test.ts`).
+- **Stock cannot be assigned to two containers.**
+  - A lot has one load unit while open and none once closed, enforced in the domain and by a CHECK in save format 6. A load unit has one location, never inside itself; a serial is held once (UNIQUE).
+  - The invariants refuse a lot in a unit that does not exist, a loop of carriers, two pallets on one spot and a serial held twice.
+- **Property tests** (`tests/properties/stock.test.ts`): 100 random scripts of transfers, splits, merges, relocations, reservations, releases, scraps and losses, every kind exercised. After every step:
+  - every invariant holds, and held = received − lost per product;
+  - every open lot is in exactly one load unit, and the stack-walking stock-take agrees with the lots;
+  - each unit's mass is its tare plus its contents, and the books balance with Inventory equal to the lots' cost;
+  - a refused step changes nothing.
+
+  Quantities, pack units, mass and volume convert and add exactly. Metric display is the exact quantity; pounds and gallons are within half their last place.
+
+- **The player can click a container and see its contents and provenance.** In the real app (`stock.spec.ts`):
+  - a test delivery through Simulation Diagnostics puts four cartons of screws on a pallet inside the workshop's roller shutter;
+  - the pallet is drawn at exactly its footprint (40.64 × 48.76 px at 40 px/m, turned a quarter) in Operating, Layout and Inspection;
+  - clicking it selects `load-unit:1`, and its record opens in the Stock window: the cartons it carries, a carton's lot traced back to `stock-receipt:1` from the Diagnostic supplier with its invoice, and its history;
+  - scrapping 20 screws there writes down exactly $1.04;
+  - a delivery with no room left is refused with the fingerprint unchanged;
+  - save, quit, relaunch and load give identical fingerprint, stock and books.
+
+  The same is covered in jsdom (`stock.test.tsx`) and through the kernel (`stock-rules.test.ts`).
+
+- **Saves.** The format 1–5 fixtures upgrade to format 6 with a backup and reach their locked fingerprints. A new frozen `format-6-stock.fisave` loads unmodified and reaches locked day-800 fingerprints past the lease end, every load unit where it stood.
+
+The packaged `FreeIndustry.exe` was smoke-tested with its profile redirected to a temporary directory. A company leased the workshop, a test delivery went through the packaged IPC path, a stock record query traced `lot:1` to its receipt, the probe was absent and there was no CSP violation. Screenshots of the three modes were reviewed and recorded in TEST_SCENARIOS.
+
+Limits:
+
+- Until staff exist (Steps 11–12), receipts and scrapping are the only stock operations the player can cause. Transfers, splits, merges, relocations, reservations and losses are implemented and tested in the domain, and Step 12 brings their producers.
+- Goods arrive only by the development test delivery until purchasing and receiving (Step 14). Deliveries unload onto goods-door landings only, so a full landing refuses further deliveries.
+- Capacity uses a volume bound, not a 3D packing. Carts and machine buffers exist in the model but have no instances until Steps 12–13. Product-restricted storage zones are Step 15.
+- Stock left on premises after a lease ends stays there, still owned; moving it out needs transport (Step 26).
+- Units carried by another are not drawn separately. In Inspection mode the labels of adjacent units can overlap.
+- In the first full E2E run, `city.spec.ts`'s Exit test failed once: the app closed while the Exit click was still settling. It passed in four runs on its own and in the full rerun.
+
+Not yet run from a fresh clone or on GitHub CI. Gate passed; **Step accepted** ticked.
 
 ## Step 11 — Named people, employment, attendance, and schedules
 

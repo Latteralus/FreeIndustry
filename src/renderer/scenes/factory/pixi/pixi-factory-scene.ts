@@ -2,7 +2,7 @@
 // loaded first; the renderer's CSP forbids eval (ADR-0008, ADR-0051).
 import 'pixi.js/unsafe-eval';
 import { Application, Container, Graphics, Rectangle, Text } from 'pixi.js';
-import type { QueryResult, RectView } from '../../../../shared/ipc/facilities';
+import type { PlacementResult, RectView } from '../../../../shared/ipc/facilities';
 import {
   cameraTransform,
   pixelsPerMetreOf,
@@ -12,7 +12,15 @@ import {
   type ViewportSize,
 } from '../camera';
 import { equipmentArt, placeArt, type ArtPrimitive } from '../equipment-art';
-import { diffScene, type SceneFrame, type SceneModel, type SceneObject } from '../scene-model';
+import { stockArt } from '../stock-art';
+import {
+  diffScene,
+  isSelectable,
+  type SceneFrame,
+  type SceneModel,
+  type SceneObject,
+  type SelectableObject,
+} from '../scene-model';
 import type { FactoryScene, ScreenRect, SceneStats } from '../scene-port';
 import { GRID_MM, LATTICE_MM } from '../../plan-transform';
 import { Pool } from '../pool';
@@ -29,7 +37,8 @@ import { FloorLayer } from './floor-layer';
  * 2. structure: columns, walls, obstacles, forbidden zones, the outline wall and doors;
  * 3. the construction grid and sub-grid (layout mode), masked to the outline;
  * 4. zones: keep-clear landings and each item's operator, maintenance, clearance and port zones;
- * 5. equipment, one pooled sprite per item keyed by its entity id, in layer-and-height order;
+ * 5. equipment, then the load units standing on the floor (Step 10), one pooled sprite
+ *    per object keyed by its entity id, in layer-and-height order;
  * 6. presentation: operational state lamps, selection, hover, the placement preview
  *    and, in a screen-space layer, labels and inspection measurements.
  *
@@ -53,6 +62,7 @@ const COLOURS = {
   allowed: 0x46a046,
   refused: 0xb03c28,
   problem: 0xdc2814,
+  works: 0xc08a20,
   idle: 0xc9b458,
   label: 0xf2f2ee,
   door: { personnel: 0x2f6f2f, 'roller-shutter': 0x1f3a5a, 'loading-dock': 0x8b4a00 },
@@ -142,6 +152,8 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
   const doors = new Graphics({ label: 'doors' });
   const grid = new Graphics({ label: 'grid' });
   const gridMask = new Graphics();
+  const floorMarks = new Graphics({ label: 'floor-marks' });
+  const floorMarksMask = new Graphics();
   const zones = new Graphics({ label: 'zones' });
   const objects = new Container({ label: 'objects', sortableChildren: false });
   const lamps = new Graphics({ label: 'state' });
@@ -149,6 +161,7 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
   const preview = new Graphics({ label: 'preview' });
   floor.container.mask = floorMask;
   grid.mask = gridMask;
+  floorMarks.mask = floorMarksMask;
   world.addChild(
     slab,
     floor.container,
@@ -157,6 +170,8 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
     doors,
     grid,
     gridMask,
+    floorMarks,
+    floorMarksMask,
     zones,
     objects,
     lamps,
@@ -211,6 +226,7 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
     slab.clear().poly(points).fill(COLOURS.slab);
     floorMask.clear().poly(points).fill(0xffffff);
     gridMask.clear().poly(points).fill(0xffffff);
+    floorMarksMask.clear().poly(points).fill(0xffffff);
     structure.clear();
     for (const object of frame.scene.objects) {
       if (object.kind !== 'feature') {
@@ -287,6 +303,63 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
     }
   };
 
+  let floorMarksKey = '';
+  /**
+   * Floor overlays: cells under a contractor's works, hatched, and the floor
+   * tool's selection, outlined. One graphics object for all of them, redrawn
+   * only when they change.
+   */
+  const drawFloorMarks = (frame: SceneFrame, ppm: number) => {
+    const marks = frame.floorMarks;
+    const key = marks
+      ? `${frame.level.index}|${ppm}|${String(marks.allowed)}|${JSON.stringify(marks.selection)}|${JSON.stringify(marks.works)}`
+      : '';
+    if (key === floorMarksKey) {
+      return;
+    }
+    floorMarksKey = key;
+    floorMarks.clear();
+    if (!marks) {
+      return;
+    }
+    const runRect = ([row, from, to]: readonly [number, number, number]): RectView => ({
+      x: from * GRID_MM,
+      y: row * GRID_MM,
+      width: (to - from) * GRID_MM,
+      depth: GRID_MM,
+    });
+    for (const run of marks.works) {
+      rectPath(floorMarks, runRect(run)).fill({ color: COLOURS.works, alpha: 0.3 });
+    }
+    // Hatching at 500 mm along the diagonal, clipped to each run, once cells are big enough to read.
+    if (ppm >= 20) {
+      for (const run of marks.works) {
+        const rect = runRect(run);
+        for (let offset = 0; offset < rect.width + rect.depth; offset += GRID_MM) {
+          const x1 = rect.x + Math.min(offset, rect.width);
+          const y1 = rect.y + Math.max(0, offset - rect.width);
+          const x2 = rect.x + Math.max(0, offset - rect.depth);
+          const y2 = rect.y + Math.min(offset, rect.depth);
+          floorMarks.moveTo(x1, y1).lineTo(x2, y2);
+        }
+      }
+      floorMarks.stroke({ color: COLOURS.works, alpha: 0.8, width: 1, pixelLine: true });
+    }
+    const colour =
+      marks.allowed === null
+        ? COLOURS.selection
+        : marks.allowed
+          ? COLOURS.allowed
+          : COLOURS.refused;
+    for (const run of marks.selection) {
+      rectPath(floorMarks, runRect(run)).fill({ color: colour, alpha: 0.18 });
+    }
+    for (const run of marks.selection) {
+      rectPath(floorMarks, runRect(run));
+    }
+    floorMarks.stroke({ color: colour, alpha: 0.9, width: 1, pixelLine: true });
+  };
+
   const drawZones = (frame: SceneFrame) => {
     zones.clear();
     zones.visible = frame.mode !== 'operating';
@@ -320,7 +393,7 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
       }
     }
     for (const object of [...diff.added, ...diff.changed]) {
-      if (object.kind !== 'equipment') {
+      if (object.kind !== 'equipment' && object.kind !== 'load-unit') {
         continue;
       }
       let sprite = sprites.get(object.id);
@@ -330,13 +403,24 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
         sprite.container.label = object.id;
         sprites.set(object.id, sprite);
       }
+      const local =
+        object.kind === 'equipment'
+          ? equipmentArt({
+              id: object.typeId,
+              category: object.category,
+              widthMm: object.widthMm,
+              depthMm: object.depthMm,
+            })
+          : stockArt({
+              kind: object.containerKind,
+              widthMm: object.widthMm,
+              depthMm: object.depthMm,
+              colour: object.colour,
+              loadColour: object.loadColour,
+              childMm: object.childMm,
+            });
       const art = placeArt(
-        equipmentArt({
-          id: object.typeId,
-          category: object.category,
-          widthMm: object.widthMm,
-          depthMm: object.depthMm,
-        }),
+        local,
         { widthMm: object.widthMm, depthMm: object.depthMm },
         object.rect,
         object.rotation,
@@ -378,7 +462,10 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
       }
     }
     marks.clear();
-    for (const object of equipment) {
+    const selectable = frame.scene.objects.filter((object): object is SelectableObject =>
+      isSelectable(object),
+    );
+    for (const object of selectable) {
       if (object.id === frame.selectedId) {
         rectPath(marks, object.rect).stroke({
           color: COLOURS.selection,
@@ -414,9 +501,32 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
         usedLabels.push(text);
       }
     }
+    // Stock is labelled in inspection mode only: its id and gross mass.
+    if (frame.mode === 'inspection') {
+      for (const object of frame.scene.objects) {
+        if (object.kind !== 'load-unit') {
+          continue;
+        }
+        const centre = worldToScreen(
+          camera,
+          viewport,
+          object.rect.x + object.rect.width / 2,
+          object.rect.y + object.rect.depth / 2,
+        );
+        const text = labelPool.acquire();
+        const kg = Number(object.grossMassMg) / 1_000_000;
+        text.text = `${object.id}
+${kg.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg`;
+        text.style.align = 'center';
+        text.anchor.set(0.5);
+        text.position.set(Math.round(centre.x), Math.round(centre.y));
+        labels.addChild(text);
+        usedLabels.push(text);
+      }
+    }
   };
 
-  const drawPreview = (result: QueryResult | null) => {
+  const drawPreview = (result: PlacementResult | null) => {
     preview.clear();
     if (!result?.footprint) {
       return;
@@ -463,6 +573,7 @@ export async function createPixiFactoryScene(host: HTMLElement): Promise<Factory
       drawStructure(frame, ppm);
       floor.update(frame, visibleWorldRect(camera, viewport), ppm);
       drawGrid(frame, ppm);
+      drawFloorMarks(frame, ppm);
       drawZones(frame);
       applyObjects(frame.scene);
       drawPresentation(frame, camera, viewport);

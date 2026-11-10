@@ -71,10 +71,16 @@ export function buildFloorModel(
       cells[row * cols + col] = surface;
     }
   }
-  for (const covering of level.coverings) {
-    const { col, row } = covering;
-    if (col >= 0 && row >= 0 && col < cols && row < rows && cells[row * cols + col] !== NOT_FLOOR) {
-      cells[row * cols + col] = indexOf(covering.materialId);
+  // Runs of one material along a row; a later run over the same cell wins (a preview over the floor).
+  for (const [row, from, to, materialId] of level.coverings) {
+    if (row < 0 || row >= rows) {
+      continue;
+    }
+    const material = indexOf(materialId);
+    for (let col = Math.max(0, from); col < Math.min(cols, to); col += 1) {
+      if (cells[row * cols + col] !== NOT_FLOOR) {
+        cells[row * cols + col] = material;
+      }
     }
   }
   return {

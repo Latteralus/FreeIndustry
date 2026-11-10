@@ -24,6 +24,14 @@ export function formatArea(areaMm2: string, units: Units): string {
     : `${group(Math.round(mm2 / MM2_PER_SQ_FT))} sq ft`;
 }
 
+/** A priced area, to two places: "1.61 sq ft" or "0.15 m²" (floor quotes, Step 09A). */
+export function formatAreaPrecise(areaMm2: string, units: Units): string {
+  const mm2 = Number(areaMm2);
+  return units === 'metric'
+    ? `${group(mm2 / 1_000_000, 2)} m²`
+    : `${group(mm2 / MM2_PER_SQ_FT, 2)} sq ft`;
+}
+
 /** "26 ft 3 in" or "8.00 m". */
 export function formatLength(mm: number, units: Units): string {
   if (units === 'metric') {
@@ -110,3 +118,70 @@ export const ROLE_LABEL = {
   supplier: 'Supplier',
   buyer: 'Buyer',
 } as const;
+
+// ------------------------------------------------------------ stock (Step 10)
+
+const MG_PER_POUND = 453_592.37;
+const MM3_PER_US_GALLON = 3_785_411.784;
+const MM3_PER_CUBIC_FOOT = 28_316_846.592;
+
+/** "412.3 lb" or "187.0 kg" from exact milligrams. */
+export function formatMass(massMg: string, units: Units): string {
+  const mg = Number(massMg);
+  return units === 'metric'
+    ? `${group(mg / 1_000_000, 1)} kg`
+    : `${group(mg / MG_PER_POUND, 1)} lb`;
+}
+
+/** "59.0 cu ft" or "1,672 L" from exact mm³. */
+export function formatVolume(volumeMm3: string, units: Units): string {
+  const mm3 = Number(volumeMm3);
+  return units === 'metric'
+    ? `${group(mm3 / 1_000_000, 0)} L`
+    : `${group(mm3 / MM3_PER_CUBIC_FOOT, 1)} cu ft`;
+}
+
+/** The exact decimal text of a quantity in millionths of a unit: "25.5", "2,000". */
+function exactUnits(micro: string): string {
+  const value = BigInt(micro);
+  const whole = value / 1_000_000n;
+  const fraction = (value % 1_000_000n).toString().padStart(6, '0').replace(/0+$/, '');
+  return fraction ? `${whole.toLocaleString('en-US')}.${fraction}` : whole.toLocaleString('en-US');
+}
+
+/**
+ * A quantity of a product in its own unit: items exactly ("2,000 each"),
+ * kilograms and litres exactly in metric ("25.5 kg", "208 L"), and in pounds
+ * or US gallons, rounded for display, in US customary units.
+ */
+export function formatQuantity(
+  product: { readonly unit: 'each' | 'kg' | 'L' },
+  quantityMicro: string,
+  units: Units,
+): string {
+  if (product.unit === 'each') {
+    return `${exactUnits(quantityMicro)} each`;
+  }
+  if (units === 'metric') {
+    return `${exactUnits(quantityMicro)} ${product.unit}`;
+  }
+  // A millionth of a kilogram is a milligram, and a millionth of a litre is a cubic millimetre.
+  const value = Number(quantityMicro);
+  return product.unit === 'kg'
+    ? `${group(value / MG_PER_POUND, 2)} lb`
+    : `${group(value / MM3_PER_US_GALLON, 2)} gal`;
+}
+
+/**
+ * Parse a quantity typed in the product's base unit ("2000", "25.5") into
+ * exact millionths, or null if it is not a positive decimal with at most six
+ * places. The worker checks again that it is a whole number of quanta.
+ */
+export function parseQuantity(text: string): string | null {
+  const match = /^\s*([0-9]{1,10})(?:\.([0-9]{1,6}))?\s*$/.exec(text.replace(/,/g, ''));
+  if (!match?.[1]) {
+    return null;
+  }
+  const micro = BigInt(match[1]) * 1_000_000n + BigInt((match[2] ?? '').padEnd(6, '0') || '0');
+  return micro > 0n ? micro.toString() : null;
+}

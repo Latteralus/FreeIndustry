@@ -20,6 +20,9 @@ import { CityWindow } from '../windows/CityWindow';
 import { CompanyWindow } from '../windows/CompanyWindow';
 import { DiagnosticsWindow } from '../windows/DiagnosticsWindow';
 import { EquipmentWindow } from '../windows/EquipmentWindow';
+import { FloorMaterialsWindow } from '../windows/FloorMaterialsWindow';
+import { StockWindow } from '../windows/StockWindow';
+import type { FloorTool } from '../scenes/factory/floor-selection';
 import { HelpWindow } from '../windows/HelpWindow';
 import { LeaseDialog } from '../windows/LeaseDialog';
 import { MainMenuWindow } from '../windows/MainMenuWindow';
@@ -105,10 +108,12 @@ export function App({
   const company = world?.company ?? null;
   const realEstate = world?.realEstate ?? null;
   const facilities = world?.facilities ?? null;
+  const stock = world?.stock ?? null;
   // The factory display mode, the placement tool and the selection are presentation
   // state; only commands change the world (ADR-0051).
   const [factoryMode, setFactoryMode] = useState<FactoryMode>('operating');
   const [tool, setTool] = useState<LayoutTool | null>(null);
+  const [floorTool, setFloorTool] = useState<FloorTool | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const scenarios = world?.scenarios ?? [];
@@ -277,6 +282,7 @@ export function App({
       factoryMode: (mode) => {
         if (mode !== 'layout') {
           setTool(null);
+          setFloorTool(null);
         }
         setFactoryMode(mode);
       },
@@ -507,10 +513,41 @@ export function App({
             units={units}
             host={host}
             onPlace={(next) => {
+              setFloorTool(null);
               setTool(next);
               setFactoryMode('layout');
             }}
             selectedId={selectedEntity}
+            onShow={(id) => {
+              setSelectedEntity(id);
+              setFocusRequest((count) => count + 1);
+            }}
+            view={view}
+            onViewChange={onViewChange}
+          />
+        );
+      case 'floor-materials':
+        return (
+          <FloorMaterialsWindow
+            facilities={facilities}
+            units={units}
+            onLay={(next) => {
+              setTool(null);
+              setFloorTool(next);
+              setFactoryMode('layout');
+            }}
+            view={view}
+            onViewChange={onViewChange}
+          />
+        );
+      case 'stock':
+        return (
+          <StockWindow
+            stock={stock}
+            units={units}
+            host={host}
+            selectedId={selectedEntity}
+            onSelect={setSelectedEntity}
             onShow={(id) => {
               setSelectedEntity(id);
               setFocusRequest((count) => count + 1);
@@ -577,7 +614,14 @@ export function App({
             focusRequest={focusRequest}
             tool={tool}
             onTool={setTool}
+            floorTool={floorTool}
+            onFloorTool={setFloorTool}
             host={host}
+            stock={stock}
+            onOpenStock={(id) => {
+              setSelectedEntity(id);
+              openWindow('stock');
+            }}
           />
           {shownWindows.map((id) => {
             const record = layout.windows[id];

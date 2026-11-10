@@ -292,17 +292,21 @@ const FIXTURE_4_DAY_400 = {
 };
 
 describe('frozen save fixtures: format 4', () => {
-  it('loads unmodified with its exact layout, and continues past the lease end', () => {
+  it('is upgraded on load with a backup, keeps its exact layout, and continues past the lease end', () => {
     const store = makeStore(join(dir.path, 'saves'));
     copyFileSync(FIXTURE_4, store.pathOf('save-layout'));
-    const before = readFileSync(store.pathOf('save-layout'));
+    // Step 09A added save format 5 (floor works) without changing the rules (ADR-0052).
+    expect(store.inspect('save-layout')).toMatchObject({ status: 'needs-upgrade' });
+    const loaded = store.read('save-layout', verifyImage);
+    expect(loaded.upgradedFrom).toBe(4);
+    const backups = readdirSync(join(store.directory, 'backups'));
+    expect(backups).toHaveLength(1);
+    const backup = join(store.directory, 'backups', backups[0] ?? '');
+    expect(withDatabase(backup, { mode: 'read' }, readSchemaStamp).userVersion).toBe(4);
     expect(store.inspect('save-layout')).toMatchObject({
       status: 'ready',
       header: { seed: 19_960_108, nowMs: 3_499_200_000n, worldRevision: 6 },
     });
-    const loaded = store.read('save-layout', verifyImage);
-    expect(loaded.upgradedFrom).toBeNull();
-    expect(readFileSync(store.pathOf('save-layout')).equals(before)).toBe(true);
     const world = restoreImage(loaded.image);
     expect(world.fingerprint()).toEqual(FIXTURE_4_AT_SAVE);
     expect(world.state.facilities?.equipment.map((item) => [item.typeId, item.placement])).toEqual([
@@ -319,6 +323,119 @@ describe('frozen save fixtures: format 4', () => {
     world.advanceTo(400n * MS_PER_DAY);
     expect(world.fingerprint()).toEqual(FIXTURE_4_DAY_400);
     expect(world.state.facilities?.equipment.every((item) => item.placement === null)).toBe(true);
+    expect(world.checkInvariants()).toEqual([]);
+  });
+});
+
+/**
+ * `format-5-floor-works.fisave`, written once by the Step 09A
+ * `scripts/write-save-fixture.ts`: save format 5, rules v1, seed 19960109,
+ * at 12:00 on day 40. A company with $60,000 leases 20 Canal Street for a
+ * year; the panel saw stands turned a quarter; grey epoxy was laid across 140
+ * cells and carpet tiles across 48 mezzanine cells; a steel-plate order over
+ * part of the epoxy and some bare floor was placed at the save and is still
+ * under way.
+ */
+const FIXTURE_5 = join(__dirname, '../../fixtures/saves/format-5-floor-works.fisave');
+const FIXTURE_5_AT_SAVE = {
+  stateHash: '09b89d9094f5237e7d69dc63ce8fe0dbe7f15085381ab2f516eebda0dd8dedb6',
+  journalHash: 'aa3821d941547dd33cc3e61c3e7592a2e682e9e637d5e7edd22a6dc1b134dee5',
+};
+const FIXTURE_5_DAY_400 = {
+  stateHash: '3b1c91cde65caf138b7df474889e1509e698e4ebe2c611fba42a4764e0adccd7',
+  journalHash: 'aedf274230315aa007851203b826bdbf1ad8268260cda7f524c47a1c320147d9',
+};
+
+describe('frozen save fixtures: format 5', () => {
+  it('is upgraded on load with a backup, finishes the order under way, and keeps the floor past the lease end', () => {
+    const store = makeStore(join(dir.path, 'saves'));
+    copyFileSync(FIXTURE_5, store.pathOf('save-floor'));
+    // Step 10 added save format 6 (stock) without changing the rules (ADR-0056).
+    expect(store.inspect('save-floor')).toMatchObject({ status: 'needs-upgrade' });
+    const loaded = store.read('save-floor', verifyImage);
+    expect(loaded.upgradedFrom).toBe(5);
+    const backups = readdirSync(join(store.directory, 'backups'));
+    expect(backups).toHaveLength(1);
+    const backup = join(store.directory, 'backups', backups[0] ?? '');
+    expect(withDatabase(backup, { mode: 'read' }, readSchemaStamp).userVersion).toBe(5);
+    expect(store.inspect('save-floor')).toMatchObject({
+      status: 'ready',
+      header: { seed: 19_960_109, nowMs: 3_499_200_000n, worldRevision: 6 },
+    });
+    const world = restoreImage(loaded.image);
+    // A world made before Step 10 has no stock records, and its fingerprints are unchanged.
+    expect(world.state.stock).toBeNull();
+    expect(world.fingerprint()).toEqual(FIXTURE_5_AT_SAVE);
+    const jobs = () =>
+      world.state.facilities?.installations.map((job) => [job.materialId, job.kind, job.status]);
+    expect(jobs()).toEqual([
+      ['epoxy-grey', 'installation', 'complete'],
+      ['office-carpet-tile', 'installation', 'complete'],
+      ['steel-plate', 'mixed', 'scheduled'],
+    ]);
+    expect(world.state.facilities?.coverings).toHaveLength(188);
+    world.advanceTo(400n * MS_PER_DAY);
+    expect(world.fingerprint()).toEqual(FIXTURE_5_DAY_400);
+    expect(jobs()?.every(([, , status]) => status === 'complete')).toBe(true);
+    // The lease ended and the dealer took the saw; the floor stays with the building.
+    expect(world.state.realEstate?.leases[0]?.status).toBe('ended');
+    expect(world.state.facilities?.equipment[0]?.placement).toBeNull();
+    expect(
+      world.state.facilities?.coverings.filter((cell) => cell.materialId === 'steel-plate'),
+    ).toHaveLength(72);
+    expect(world.checkInvariants()).toEqual([]);
+  });
+});
+
+/**
+ * `format-6-stock.fisave`, written once by the Step 10
+ * `scripts/write-save-fixture.ts`: save format 6, rules v1, seed 19960110,
+ * at 12:00 on day 20. A company leases the factory at 8 Northgate Drive for
+ * two years with a workbench installed; four test deliveries stand on the
+ * dock aprons (screws in four cartons on a pallet, six serialized motors on
+ * a pallet, a drum of enamel, a bulk bag of pellets); 20 screws and one motor
+ * have been classified as scrap.
+ */
+const FIXTURE_6 = join(__dirname, '../../fixtures/saves/format-6-stock.fisave');
+const FIXTURE_6_AT_SAVE = {
+  stateHash: '09cb135e93357bf035ee36afcc758a538e2be027249cddfa4897f12ee67b979a',
+  journalHash: '320666f8c059051c45254076a683da9318bb17384acdcbef9f232f1dd9104f7d',
+};
+const FIXTURE_6_DAY_800 = {
+  stateHash: '4a1696e7aebfae310ab81fe7d87233151b83500fb0e13ce28807aff37f973af9',
+  journalHash: '38716ac8f6cc30e9143769696de3dec38294c9e2367e9070ce33668480459fd1',
+};
+
+describe('frozen save fixtures: format 6', () => {
+  it('loads unmodified with its stock, and keeps every lot where it stands past the lease end', () => {
+    const store = makeStore(join(dir.path, 'saves'));
+    copyFileSync(FIXTURE_6, store.pathOf('save-stock'));
+    const before = readFileSync(store.pathOf('save-stock'));
+    expect(store.inspect('save-stock')).toMatchObject({
+      status: 'ready',
+      header: { seed: 19_960_110, nowMs: 1_771_200_000n, worldRevision: 9 },
+    });
+    const loaded = store.read('save-stock', verifyImage);
+    expect(loaded.upgradedFrom).toBeNull();
+    expect(readFileSync(store.pathOf('save-stock')).equals(before)).toBe(true);
+    const world = restoreImage(loaded.image);
+    expect(world.fingerprint()).toEqual(FIXTURE_6_AT_SAVE);
+    const stock = world.state.stock;
+    expect(stock?.receipts.map((receipt) => receipt.productId)).toEqual([
+      'wood-screw-8-1-25',
+      'motor-half-hp',
+      'enamel-machine-grey',
+      'hdpe-pellets',
+    ]);
+    expect(stock?.loadUnits.filter((unit) => unit.location.kind === 'floor')).toHaveLength(4);
+    expect(
+      stock?.lots.filter((lot) => lot.disposition === 'scrap').map((lot) => lot.quantityMicro),
+    ).toEqual([20_000_000n, 1_000_000n]);
+    const before800 = stock?.loadUnits.map((unit) => unit.location);
+    world.advanceTo(800n * MS_PER_DAY);
+    expect(world.fingerprint()).toEqual(FIXTURE_6_DAY_800);
+    expect(world.state.realEstate?.leases[0]?.status).toBe('ended');
+    expect(world.state.stock?.loadUnits.map((unit) => unit.location)).toEqual(before800);
     expect(world.checkInvariants()).toEqual([]);
   });
 });

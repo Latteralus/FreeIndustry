@@ -4,6 +4,7 @@ import { companyStructureProblems, hasCompanyTables } from './company-repository
 import { facilitiesStructureProblems, hasFacilitiesTables } from './facilities-repository';
 import { hasRealEstateTables, realEstateStructureProblems } from './real-estate-repository';
 import { applyMigrations, type Migration } from './migrations';
+import { hasStockTables, stockStructureProblems } from './stock-repository';
 
 /**
  * Save-file integrity checks (spec §10.4, ADR-0027). Run on every load and
@@ -22,7 +23,9 @@ import { applyMigrations, type Migration } from './migrations';
  *    (every entry, every account balance, every invoice and its payments,
  *    ADR-0033); from format 3, leases that agree with their properties and
  *    obligations (ADR-0039); from format 4, equipment standing only in leased
- *    premises and floor installations that agree with their entries (ADR-0049).
+ *    premises and floor installations that agree with their entries (ADR-0049);
+ *    from format 6, lots only in their owner's load units, and receipts and
+ *    write-offs that agree with their invoices and entries (ADR-0056).
  *
  * Kernel-level consistency (fingerprints, invariants) is checked afterwards by
  * restoring the world in the simulation kernel.
@@ -113,6 +116,9 @@ function checkStructure(db: SqliteDatabase): string[] {
   }
   if (hasFacilitiesTables(db)) {
     problems.push(...facilitiesStructureProblems(db));
+  }
+  if (hasStockTables(db)) {
+    problems.push(...stockStructureProblems(db));
   }
   return problems;
 }

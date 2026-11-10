@@ -22,6 +22,7 @@ import { defineCommand, type SimulationRules } from '../simulation/rules';
 import { companyView } from './company-view';
 import { answerQuery, facilitiesView } from './facility-view';
 import { realEstateView } from './real-estate-view';
+import { stockView } from './stock-view';
 import { SimulationPacer, type PacerOptions, type TickOutcome } from './pacer';
 
 /**
@@ -194,6 +195,14 @@ export class CommandHost {
           kernel.state.company,
           kernel.config.epoch,
         ),
+      stock:
+        kernel.state.stock &&
+        stockView(
+          kernel.state.stock,
+          kernel.state.realEstate,
+          kernel.state.company,
+          kernel.config.epoch,
+        ),
       scenarios: [...this.#scenarios],
       diagnostics: {
         probeCount: diagnostics.probeCount,
@@ -222,8 +231,12 @@ export class CommandHost {
 
   /** A read-only question about the current world; it changes nothing (ADR-0050). */
   query(query: SimulationQuery): QueryResult {
-    const { facilities, realEstate, company } = this.#kernel.state;
-    return answerQuery(query, facilities, realEstate, company);
+    const { facilities, realEstate, company, stock } = this.#kernel.state;
+    return answerQuery(query, facilities, realEstate, company, {
+      nowMs: this.#kernel.nowMs,
+      epoch: this.#kernel.config.epoch,
+      stock,
+    });
   }
 
   /** Clock control: pacing only, so no revision, journal entry or fingerprint change. */

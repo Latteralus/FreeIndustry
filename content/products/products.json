@@ -1,0 +1,140 @@
+{
+  "products": [
+    {
+      "id": "pine-stud-2x4-8ft",
+      "name": "Pine stud, 2 × 4 in, 8 ft",
+      "category": "lumber",
+      "description": "Kiln-dried spruce-pine-fir stud, dressed to 1½ × 3½ in (38 × 89 mm), 8 ft (2,438 mm) long.",
+      "unit": "each",
+      "form": "item",
+      "tracking": "lot",
+      "quantumMicro": 1000000,
+      "itemMm": [2438, 89, 38],
+      "massPerQuantumMg": 3700000,
+      "volumePerQuantumMm3": null,
+      "packUnits": [{ "id": "unit-160", "name": "unit of 160 studs", "quanta": 160 }],
+      "grades": [
+        { "code": "select", "name": "Select structural" },
+        { "code": "no-2", "name": "No. 2 and better" }
+      ],
+      "colour": "#c8a46a"
+    },
+    {
+      "id": "birch-plywood-18mm",
+      "name": "Birch plywood, 4 × 8 ft, 18 mm",
+      "category": "sheet-goods",
+      "description": "Thirteen-ply birch plywood sheet, 1,220 × 2,440 mm, 18 mm thick, sanded both faces.",
+      "unit": "each",
+      "form": "item",
+      "tracking": "lot",
+      "quantumMicro": 1000000,
+      "itemMm": [2440, 1220, 18],
+      "massPerQuantumMg": 36400000,
+      "volumePerQuantumMm3": null,
+      "packUnits": [{ "id": "crate-40", "name": "crate of 40 sheets", "quanta": 40 }],
+      "grades": [
+        { "code": "bb-bb", "name": "B/BB faces" },
+        { "code": "cp-cp", "name": "CP/CP faces" }
+      ],
+      "colour": "#d9c290"
+    },
+    {
+      "id": "wood-screw-8-1-25",
+      "name": "Wood screws, #8 × 1¼ in, zinc plated",
+      "category": "hardware",
+      "description": "Flat-head Phillips wood screw, zinc plated steel. Counted each; sold by the box of 200.",
+      "unit": "each",
+      "form": "item",
+      "tracking": "lot",
+      "quantumMicro": 1000000,
+      "itemMm": [32, 8, 8],
+      "massPerQuantumMg": 2600,
+      "volumePerQuantumMm3": null,
+      "packUnits": [
+        { "id": "box-200", "name": "box of 200", "quanta": 200 },
+        { "id": "case-2000", "name": "case of 10 boxes", "quanta": 2000 }
+      ],
+      "grades": [{ "code": "standard", "name": "Standard" }],
+      "colour": "#a8aaa6"
+    },
+    {
+      "id": "steel-sheet-cr-2mm",
+      "name": "Cold-rolled steel sheet, 4 × 8 ft, 2 mm",
+      "category": "metal",
+      "description": "Mild steel sheet, cold rolled and oiled, 1,219 × 2,438 mm, 2 mm (14 gauge) thick.",
+      "unit": "each",
+      "form": "item",
+      "tracking": "lot",
+      "quantumMicro": 1000000,
+      "itemMm": [2438, 1219, 2],
+      "massPerQuantumMg": 46659175,
+      "volumePerQuantumMm3": null,
+      "packUnits": [{ "id": "bundle-20", "name": "bundle of 20 sheets", "quanta": 20 }],
+      "grades": [
+        { "code": "prime", "name": "Prime" },
+        { "code": "secondary", "name": "Secondary" }
+      ],
+      "colour": "#8f969c"
+    },
+    {
+      "id": "hdpe-pellets",
+      "name": "HDPE pellets, natural",
+      "category": "plastics",
+      "description": "High-density polyethylene moulding pellets, uncoloured. Weighed to the gram; bulk density about 0.6 kg per litre.",
+      "unit": "kg",
+      "form": "bulk",
+      "tracking": "lot",
+      "quantumMicro": 1000,
+      "itemMm": null,
+      "massPerQuantumMg": 1000,
+      "volumePerQuantumMm3": 1667,
+      "packUnits": [
+        { "id": "bag-25kg", "name": "25 kg bag", "quanta": 25000 },
+        { "id": "tonne", "name": "tonne", "quanta": 1000000 }
+      ],
+      "grades": [
+        { "code": "prime", "name": "Prime" },
+        { "code": "off-grade", "name": "Off-grade" }
+      ],
+      "colour": "#ecebe2"
+    },
+    {
+      "id": "enamel-machine-grey",
+      "name": "Alkyd enamel, machine grey",
+      "category": "coatings",
+      "description": "Solvent-borne alkyd machinery enamel, gloss machine grey. Measured to the millilitre; about 1.25 kg per litre.",
+      "unit": "L",
+      "form": "liquid",
+      "tracking": "lot",
+      "quantumMicro": 1000,
+      "itemMm": null,
+      "massPerQuantumMg": 1250,
+      "volumePerQuantumMm3": 1000,
+      "packUnits": [
+        { "id": "gallon", "name": "US gallon (3.785 L)", "quanta": 3785 },
+        { "id": "drum-208", "name": "55-gallon drum (208 L)", "quanta": 208000 }
+      ],
+      "grades": [{ "code": "first", "name": "First quality" }],
+      "colour": "#6e7479"
+    },
+    {
+      "id": "motor-half-hp",
+      "name": "Electric motor, ½ hp, 1,725 rpm",
+      "category": "components",
+      "description": "Single-phase capacitor-start motor, 115 V, ½ hp, 1,725 rpm, 56 frame. Every motor carries its own serial number.",
+      "unit": "each",
+      "form": "item",
+      "tracking": "serialized",
+      "quantumMicro": 1000000,
+      "itemMm": [254, 165, 165],
+      "massPerQuantumMg": 9100000,
+      "volumePerQuantumMm3": null,
+      "packUnits": [],
+      "grades": [
+        { "code": "first", "name": "First quality" },
+        { "code": "second", "name": "Second (cosmetic marks)" }
+      ],
+      "colour": "#3d5a73"
+    }
+  ]
+}

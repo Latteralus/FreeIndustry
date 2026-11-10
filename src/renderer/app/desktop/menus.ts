@@ -230,6 +230,9 @@ export function buildMenus(context: MenuContext): MenuDefinition[] {
         command('catalog-equipment', 'Equipment Catalog…', () => {
           actions.openWindow('equipment');
         }),
+        command('catalog-floor-materials', 'Floor Materials…', () => {
+          actions.openWindow('floor-materials');
+        }),
         notBuilt('catalog-products', 'Products', 'products and recipes'),
       ],
     },
@@ -264,6 +267,9 @@ export function buildMenus(context: MenuContext): MenuDefinition[] {
         separator('operations-1'),
         ...advanceEntries,
         separator('operations-2'),
+        command('operations-stock', 'Stock…', () => {
+          actions.openWindow('stock');
+        }),
         notBuilt('operations-production', 'Production', 'machines, work orders and production'),
       ],
     },

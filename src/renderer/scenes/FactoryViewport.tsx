@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FacilitiesView, QueryResult } from '../../shared/ipc/facilities';
 import type { PropertyView } from '../../shared/ipc/real-estate';
+import type { StockView } from '../../shared/ipc/stock';
 import type { Units } from '../app/desktop/profile-store';
 import { formatCents } from '../app/money-input';
-import { formatArea, formatLength, PROPERTY_KIND_LABEL, scaleBarLength } from '../app/units';
+import {
+  formatArea,
+  formatAreaPrecise,
+  formatLength,
+  formatMass,
+  PROPERTY_KIND_LABEL,
+  scaleBarLength,
+} from '../app/units';
 import type { SimulationHostView } from '../app/useSimulationHost';
 import {
   cameraOn,
@@ -15,7 +23,15 @@ import {
   type WorldPoint,
 } from './factory/camera';
 import { FactoryCanvas } from './factory/FactoryCanvas';
-import { buildSceneModel, hitTest, type SceneFrame } from './factory/scene-model';
+import type { FloorTool } from './factory/floor-selection';
+import { FloorToolStatus, useFloorSelection } from './factory/FloorTool';
+import {
+  buildSceneModel,
+  hitTest,
+  isSelectable,
+  type SceneFrame,
+  type SelectableObject,
+} from './factory/scene-model';
 import { useFixtureLevel } from './factory/scene-probe';
 import { FloorPlan } from './FloorPlan';
 import { DEFAULT_ZOOM_INDEX, GRID_MM, LATTICE_MM, snap, ZOOM_STEPS } from './plan-transform';
@@ -68,6 +84,13 @@ export interface FactoryViewportProps {
   /** Bumped by a window's "Show on floor" to centre the view on the selection. */
   readonly focusRequest?: number;
   readonly host?: Pick<SimulationHostView, 'submit' | 'query' | 'pending'>;
+  /** The floor-covering tool (Step 09A), shared with the Floor Materials window. */
+  readonly floorTool?: FloorTool | null;
+  readonly onFloorTool?: (tool: FloorTool | null) => void;
+  /** The stock read model (Step 10); null in worlds made before it. */
+  readonly stock?: StockView | null;
+  /** Open the Stock window on a load unit's record. */
+  readonly onOpenStock?: (id: string) => void;
 }
 
 const turn = (rotation: number) => (rotation + 90) % 360;
@@ -91,6 +114,10 @@ export function FactoryViewport({
   onSelect,
   focusRequest = 0,
   host,
+  floorTool = null,
+  onFloorTool,
+  stock = null,
+  onOpenStock,
 }: FactoryViewportProps) {
   const [levelIndex, setLevelIndex] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
@@ -116,6 +143,47 @@ export function FactoryViewport({
     (item) => item.placement?.propertyId === site?.propertyId,
   );
   const toolType = tool ? facilities?.equipmentTypes.find((type) => type.id === tool.typeId) : null;
+  // The floor tool works in layout mode when no item is being placed (Step 09A).
+  const activeFloorTool = layoutMode && !tool && !fixtureLevel ? floorTool : null;
+  const hoverCell =
+    hover && level
+      ? { col: Math.floor(hover.xMm / GRID_MM), row: Math.floor(hover.yMm / GRID_MM) }
+      : null;
+  const floorSelection = useFloorSelection({
+    tool: activeFloorTool,
+    level: ownLevel ?? null,
+    propertyId: site?.propertyId ?? null,
+    surfaceMaterialId: site?.surfaceMaterialId ?? '',
+    materials: facilities?.floorMaterials ?? [],
+    hover:
+      hoverCell &&
+      ownLevel &&
+      hoverCell.col >= 0 &&
+      hoverCell.row >= 0 &&
+      hoverCell.col < ownLevel.cells.cols &&
+      hoverCell.row < ownLevel.cells.rows
+        ? hoverCell
+        : null,
+    host,
+    revision: facilities,
+  });
+  const orderFloor = async () => {
+    if (!floorSelection || !activeFloorTool || !site || !ownLevel || !host) {
+      return;
+    }
+    const outcome = await host.submit('facility.installFloorCovering', {
+      propertyId: site.propertyId,
+      level: ownLevel.index,
+      materialId: activeFloorTool.materialId,
+      rectangles: floorSelection.rects,
+    });
+    if (outcome?.kind === 'accepted') {
+      floorSelection.clear();
+      setMessage(null);
+    } else if (outcome?.kind === 'rejected') {
+      setMessage(outcome.error.message);
+    }
+  };
 
   // One camera for every mode, re-centred only when the floor being shown changes.
   const viewKey =
@@ -155,13 +223,16 @@ export function FactoryViewport({
             level,
             facilities ?? { equipment: [], equipmentTypes: [] },
             site.propertyId,
+            stock,
           )
         : null,
-    [premises, site, level, facilities],
+    [premises, site, level, facilities, stock],
   );
   const selected = scene?.objects.find(
-    (object): object is Extract<typeof object, { kind: 'equipment' }> =>
-      object.kind === 'equipment' && object.id === selectedId,
+    (object): object is SelectableObject => isSelectable(object) && object.id === selectedId,
+  );
+  const onFloorStock = (stock?.loadUnits ?? []).filter(
+    (unit) => unit.location.kind === 'floor' && unit.location.propertyId === site?.propertyId,
   );
   const hovered = hover && scene && !tool ? hitTest(scene, hover.xMm, hover.yMm) : null;
 
@@ -243,8 +314,36 @@ export function FactoryViewport({
     };
   }, [tool, onTool]);
 
+  // Esc clears the floor selection, and a second Esc puts the floor tool away.
+  const floorEmpty =
+    !floorSelection || (floorSelection.rects.length === 0 && !floorSelection.anchor);
+  const clearFloor = floorSelection?.clear;
+  useEffect(() => {
+    if (!activeFloorTool || !onFloorTool) {
+      return undefined;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      const typing =
+        event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement;
+      if (typing || event.key !== 'Escape') {
+        return;
+      }
+      if (floorEmpty) {
+        onFloorTool(null);
+      } else {
+        clearFloor?.();
+      }
+      setMessage(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [activeFloorTool, onFloorTool, floorEmpty, clearFloor]);
+
   // The worker's verdict on exactly the placement shown, never a stale one.
-  const preview = answer?.key === key ? answer.result : null;
+  const answered = answer?.key === key ? answer.result : null;
+  const preview = answered?.kind === 'placement' ? answered : null;
 
   const place = async () => {
     if (!tool || !target || !site || !host) {
@@ -283,15 +382,29 @@ export function FactoryViewport({
     const eligible = level.eligibleRuns.some(
       ([r, from, to]) => r === row && col >= from && col < to,
     );
-    const covering = level.coverings.find((cell) => cell.col === col && cell.row === row);
-    const materialId = covering?.materialId ?? site?.surfaceMaterialId ?? '';
-    const material =
-      facilities?.floorMaterials.find((item) => item.id === materialId)?.name ?? materialId;
+    const covering = level.coverings.find(([r, from, to]) => r === row && col >= from && col < to);
+    const materialId = covering?.[3] ?? site?.surfaceMaterialId ?? '';
+    const nameOf = (id: string) =>
+      facilities?.floorMaterials.find((item) => item.id === id)?.name ?? id;
     if (!eligible) {
       return `Cell (${col}, ${row}): outside the usable floor`;
     }
     const area = partial ? String(partial[2]) : '250000';
-    return `Cell (${col}, ${row}): ${partial ? 'partial' : 'full'}, ${formatArea(area, units)} · ${material}`;
+    const order = covering
+      ? facilities?.floorOrders.find((item) => item.id === covering[4])
+      : undefined;
+    const laid = order
+      ? `, laid by ${order.id} on ${order.completesOn}`
+      : covering
+        ? ''
+        : ' (the building’s existing floor)';
+    const works = level.works.find((job) =>
+      job.runs.some(([r, from, to]) => r === row && col >= from && col < to),
+    );
+    const underWorks = works
+      ? ` · under works (${works.installationId}): ${nameOf(works.materialId)} until ${works.completesOn}`
+      : '';
+    return `Cell (${col}, ${row}): ${partial ? 'partial' : 'full'}, ${formatAreaPrecise(area, units)} · ${nameOf(materialId)}${laid}${underWorks}`;
   })();
 
   if (!premises) {
@@ -352,17 +465,33 @@ export function FactoryViewport({
       ) : null}
     </span>
   );
-  const contents =
+  const equipmentText =
     installed.length === 0
+      ? 'no equipment'
+      : `${installed.length} ${installed.length === 1 ? 'item' : 'items'} of equipment installed (idle until production, Step 13)`;
+  const stockText =
+    onFloorStock.length === 0
+      ? 'no stock'
+      : `${onFloorStock.length} ${onFloorStock.length === 1 ? 'load unit' : 'load units'} of stock on the floor`;
+  const contents =
+    installed.length === 0 && onFloorStock.length === 0
       ? 'Empty: no equipment, staff or stock'
-      : `${installed.length} ${installed.length === 1 ? 'item' : 'items'} of equipment installed (idle until production, Step 13); no staff or stock`;
+      : onFloorStock.length === 0
+        ? `${equipmentText}; no staff or stock`
+        : `${equipmentText}; ${stockText}; no staff`;
 
   const frame: SceneFrame | null =
     scene && level && site && facilities
       ? {
           mode,
           scene,
-          level,
+          // With the floor tool, the selection is previewed in its material (presentation only).
+          level: floorSelection?.previewLevel ?? level,
+          floorMarks:
+            floorSelection?.marks ??
+            (level.works.length > 0
+              ? { selection: [], allowed: null, works: level.works.flatMap((job) => job.runs) }
+              : undefined),
           surfaceMaterialId: site.surfaceMaterialId,
           materials: facilities.floorMaterials,
           showGrid: layoutMode && showGrid,
@@ -374,14 +503,38 @@ export function FactoryViewport({
       : null;
   const bar = scaleBarLength(pixelsPerMetre, units);
 
-  const selectedRecord = selected ? (
-    <>
-      <strong>{selected.name}</strong> ({selected.id}) at {formatLength(selected.rect.x, units)},{' '}
-      {formatLength(selected.rect.y, units)}, {formatLength(selected.rect.width, units)} ×{' '}
-      {formatLength(selected.rect.depth, units)}, turned {selected.rotation}° · state: idle (no
-      production until Step 13).
-    </>
-  ) : null;
+  const selectedUnit =
+    selected?.kind === 'load-unit'
+      ? stock?.loadUnits.find((unit) => unit.id === selected.id)
+      : undefined;
+  const selectedRecord =
+    selected?.kind === 'equipment' ? (
+      <>
+        <strong>{selected.name}</strong> ({selected.id}) at {formatLength(selected.rect.x, units)},{' '}
+        {formatLength(selected.rect.y, units)}, {formatLength(selected.rect.width, units)} ×{' '}
+        {formatLength(selected.rect.depth, units)}, turned {selected.rotation}° · state: idle (no
+        production until Step 13).
+      </>
+    ) : selected?.kind === 'load-unit' ? (
+      <>
+        <strong>{selected.name}</strong> ({selected.id}) at {formatLength(selected.rect.x, units)},{' '}
+        {formatLength(selected.rect.y, units)}, {formatLength(selected.rect.width, units)} ×{' '}
+        {formatLength(selected.rect.depth, units)} · {selectedUnit?.lotIds.length ?? 0}{' '}
+        {selectedUnit?.lotIds.length === 1 ? 'lot' : 'lots'}, {selected.nestedUnits} load{' '}
+        {selected.nestedUnits === 1 ? 'unit' : 'units'} inside · gross{' '}
+        {formatMass(selected.grossMassMg, units)}{' '}
+        {onOpenStock ? (
+          <button
+            type="button"
+            onClick={() => {
+              onOpenStock(selected.id);
+            }}
+          >
+            Contents and provenance…
+          </button>
+        ) : null}
+      </>
+    ) : null;
 
   return (
     <div
@@ -454,6 +607,26 @@ export function FactoryViewport({
                   />{' '}
                   250 mm sub-grid and snap
                 </label>
+                {onFloorTool && !fixtureLevel ? (
+                  <button
+                    type="button"
+                    aria-pressed={activeFloorTool !== null}
+                    disabled={tool !== null}
+                    onClick={() => {
+                      const first = facilities?.floorMaterials.find(
+                        (item) => item.installCentsPerM2 !== null,
+                      );
+                      onFloorTool(
+                        activeFloorTool || !first
+                          ? null
+                          : { materialId: first.id, shape: 'rectangle' },
+                      );
+                      setMessage(null);
+                    }}
+                  >
+                    Floor coverings…
+                  </button>
+                ) : null}
               </>
             ) : null}
             <span data-testid="level-area">
@@ -512,10 +685,28 @@ export function FactoryViewport({
                   />
                 ) : null}
               </>
+            ) : activeFloorTool && floorSelection && facilities ? (
+              <>
+                <FloorToolStatus
+                  tool={activeFloorTool}
+                  selection={floorSelection}
+                  materials={facilities.floorMaterials}
+                  units={units}
+                  pending={host?.pending ?? false}
+                  onTool={(next) => {
+                    onFloorTool?.(next);
+                  }}
+                  onOrder={() => {
+                    void orderFloor();
+                  }}
+                />
+                <br />
+                <span data-testid="cell-info">{cellInfo ?? 'Point at a cell to inspect it.'}</span>
+              </>
             ) : selectedRecord ? (
               <span data-testid="selection-record" data-entity-id={selected?.id}>
                 {selectedRecord}{' '}
-                {layoutMode && selected ? (
+                {layoutMode && selected?.kind === 'equipment' ? (
                   <>
                     <button
                       type="button"
@@ -564,7 +755,10 @@ export function FactoryViewport({
                 {installed.length === 0
                   ? 'No equipment installed.'
                   : `${installed.length} idle (production begins in Step 13).`}{' '}
-                Drag to pan, wheel to zoom, click an item to select it.
+                {onFloorStock.length > 0
+                  ? `${onFloorStock.length} load ${onFloorStock.length === 1 ? 'unit' : 'units'} of stock on the floor. `
+                  : ''}
+                Drag to pan, wheel to zoom, click an item or a load unit to select it.
               </span>
             )}
             {message ? (
@@ -581,17 +775,29 @@ export function FactoryViewport({
               camera={activeCamera}
               onCameraChange={changeCamera}
               onPointer={setHover}
-              onFloorClick={(at) => {
+              onFloorClick={(at, add) => {
                 setHover(at);
                 if (layoutMode && tool) {
                   void place();
+                } else if (floorSelection && ownLevel) {
+                  const col = Math.floor(at.xMm / GRID_MM);
+                  const row = Math.floor(at.yMm / GRID_MM);
+                  if (
+                    col >= 0 &&
+                    row >= 0 &&
+                    col < ownLevel.cells.cols &&
+                    row < ownLevel.cells.rows
+                  ) {
+                    setMessage(null);
+                    floorSelection.click({ col, row }, add);
+                  }
                 } else {
                   select(scene ? (hitTest(scene, at.xMm, at.yMm)?.id ?? null) : null);
                 }
               }}
               label={`Floor plan of ${premises.address}, ${level?.name ?? ''}, drawn to scale, ${MODE_LABEL[mode]} mode`}
             />
-            {hovered?.kind === 'equipment' ? (
+            {hovered ? (
               <div className="factory-viewport-tooltip" data-testid="hover-tooltip">
                 {hovered.name} ({hovered.id})
               </div>

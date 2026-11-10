@@ -2,9 +2,9 @@ import type { PremisesLevelView } from '../../src/shared/ipc/facilities';
 
 /**
  * Level drawings for floor-rendering tests (plan Step 09 "floor rendering"):
- * plain rectangular floors with a chosen covering per cell. Nothing in the
- * game can lay a covering until Step 09A, so the floor layer is measured on
- * these. They are drawings only, shaped exactly like the worker's level view.
+ * plain rectangular floors with a chosen covering per cell, far larger than
+ * any order a test would place, so the floor layer is measured on these.
+ * They are drawings only, shaped exactly like the worker's level view.
  */
 
 export interface FixtureCovering {
@@ -45,7 +45,15 @@ export function rectangularLevel(
     partialCells: [],
     features: [],
     keepClear: [],
-    coverings: [...coverings],
+    // One run per cell, as the worker would send cells laid by different orders.
+    coverings: coverings.map((cell): [number, number, number, string, string] => [
+      cell.row,
+      cell.col,
+      cell.col + 1,
+      cell.materialId,
+      'fixture',
+    ]),
+    works: [],
   };
 }
 

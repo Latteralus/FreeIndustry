@@ -3,10 +3,11 @@ import type {
   EquipmentView,
   FacilitiesView,
   PremisesLevelView,
-  QueryResult,
+  PlacementResult,
   RectView,
 } from '../../../shared/ipc/facilities';
 import type { PropertyView } from '../../../shared/ipc/real-estate';
+import type { StockView } from '../../../shared/ipc/stock';
 import type { FactoryMode } from './camera';
 
 /**
@@ -20,8 +21,11 @@ import type { FactoryMode } from './camera';
  * instead of rebuilding. Pure, so it is tested without a GPU.
  */
 
-/** Layers, bottom to top (spec §5.6). Floor and grid are drawn by their own layers. */
-type SceneLayer = 'structure' | 'objects' | 'overlay';
+/**
+ * Layers, bottom to top (spec §5.6). Floor and grid are drawn by their own
+ * layers; stock (layer 5, things that move) is drawn over placed equipment.
+ */
+type SceneLayer = 'structure' | 'objects' | 'stock' | 'overlay';
 
 type DoorKind = PropertyView['doors'][number]['kind'];
 
@@ -42,6 +46,28 @@ export type SceneObject =
       readonly zones: NonNullable<EquipmentView['placement']>['zones'];
       /** Operational state shown in operating and inspection modes (Step 13 adds working). */
       readonly state: 'idle';
+    }
+  | {
+      /** A load unit standing on this floor (Step 10): its exact footprint and what is on top. */
+      readonly kind: 'load-unit';
+      readonly id: string;
+      readonly layer: 'stock';
+      readonly heightMm: number;
+      readonly rect: RectView;
+      readonly typeId: string;
+      readonly containerKind: string;
+      readonly name: string;
+      /** The container's own frame size, before its quarter turn. */
+      readonly widthMm: number;
+      readonly depthMm: number;
+      readonly rotation: number;
+      readonly colour: string;
+      readonly loadColour: string | null;
+      /** Plan size of the units it carries, for seams across its load. */
+      readonly childMm: { readonly width: number; readonly depth: number } | null;
+      /** Load units inside it, at any depth. */
+      readonly nestedUnits: number;
+      readonly grossMassMg: string;
     }
   | {
       readonly kind: 'feature';
@@ -82,7 +108,7 @@ export interface SceneModel {
   readonly objects: readonly SceneObject[];
 }
 
-const LAYER_ORDER: Record<SceneLayer, number> = { structure: 0, objects: 1, overlay: 2 };
+const LAYER_ORDER: Record<SceneLayer, number> = { structure: 0, objects: 1, stock: 2, overlay: 3 };
 
 /** Drawing order: layer, then height above the floor, then id (a stable tie-break). */
 export function drawOrder(a: SceneObject, b: SceneObject): number {
@@ -136,6 +162,7 @@ export function buildSceneModel(
   level: PremisesLevelView,
   facilities: Pick<FacilitiesView, 'equipment' | 'equipmentTypes'>,
   propertyId: string,
+  stock: Pick<StockView, 'loadUnits' | 'containerTypes'> | null = null,
 ): SceneModel {
   const types = new Map<string, EquipmentTypeView>(
     facilities.equipmentTypes.map((type) => [type.id, type]),
@@ -188,6 +215,41 @@ export function buildSceneModel(
       state: 'idle',
     });
   }
+  const containers = new Map((stock?.containerTypes ?? []).map((type) => [type.id, type]));
+  for (const unit of stock?.loadUnits ?? []) {
+    const { location } = unit;
+    const type = containers.get(unit.typeId);
+    if (
+      location.kind !== 'floor' ||
+      location.propertyId !== propertyId ||
+      location.level !== level.index ||
+      !type
+    ) {
+      continue;
+    }
+    const firstChild = stock?.loadUnits.find((candidate) => candidate.id === unit.childIds[0]);
+    const childType = firstChild && containers.get(firstChild.typeId);
+    objects.push({
+      kind: 'load-unit',
+      id: unit.id,
+      layer: 'stock',
+      heightMm: type.maxHeightMm,
+      rect: location.rect,
+      typeId: unit.typeId,
+      containerKind: unit.kind,
+      name: unit.name,
+      widthMm: type.outerMm.width,
+      depthMm: type.outerMm.depth,
+      rotation: location.rotation,
+      colour: type.colour,
+      loadColour: unit.loadColour,
+      childMm: childType
+        ? { width: childType.outerMm.width, depth: childType.outerMm.depth }
+        : null,
+      nestedUnits: unit.nestedUnits,
+      grossMassMg: unit.grossMassMg,
+    });
+  }
   objects.sort(drawOrder);
   return { levelIndex: level.index, objects };
 }
@@ -230,15 +292,23 @@ function containsPoint(rect: RectView, xMm: number, yMm: number): boolean {
   return xMm >= rect.x && xMm < rect.x + rect.width && yMm >= rect.y && yMm < rect.y + rect.depth;
 }
 
+/** Objects the player can select: equipment and the load units standing on the floor. */
+export type SelectableObject = Extract<SceneObject, { kind: 'equipment' | 'load-unit' }>;
+
+export function isSelectable(object: SceneObject | undefined): object is SelectableObject {
+  return object?.kind === 'equipment' || object?.kind === 'load-unit';
+}
+
 /**
- * The selectable entity at a world point: the topmost equipment whose
- * footprint holds it, by drawing order. A plain point-in-footprint test in
- * millimetres, the same in every mode.
+ * The selectable entity at a world point: the topmost equipment or load
+ * unit whose footprint holds it, by drawing order (stock lies over
+ * equipment). A plain point-in-footprint test in millimetres, the same in
+ * every mode.
  */
-export function hitTest(scene: SceneModel, xMm: number, yMm: number): SceneObject | null {
+export function hitTest(scene: SceneModel, xMm: number, yMm: number): SelectableObject | null {
   for (let index = scene.objects.length - 1; index >= 0; index -= 1) {
     const object = scene.objects[index];
-    if (object?.kind === 'equipment' && containsPoint(object.rect, xMm, yMm)) {
+    if (isSelectable(object) && containsPoint(object.rect, xMm, yMm)) {
       return object;
     }
   }
@@ -257,5 +327,17 @@ export interface SceneFrame {
   readonly selectedId: string | null;
   readonly hoverId: string | null;
   /** The worker's verdict on the placement being previewed, or null. */
-  readonly preview: QueryResult | null;
+  readonly preview: PlacementResult | null;
+  /**
+   * Floor overlays (Step 09A): the cells the floor tool has selected, outlined
+   * (`allowed` colours them by the worker's quote), and the cells under a
+   * contractor's works, hatched. Runs are `[row, firstCol, endCol)`.
+   */
+  readonly floorMarks?:
+    | {
+        readonly selection: readonly (readonly [number, number, number])[];
+        readonly allowed: boolean | null;
+        readonly works: readonly (readonly [number, number, number])[];
+      }
+    | undefined;
 }

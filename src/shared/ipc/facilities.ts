@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { nonNegativeCentsString } from '../money';
+import { cellRectSchema, MAX_FLOOR_ORDER_RECTANGLES, MAX_FLOOR_ORDERS } from './commands';
+import { stockRecordQuerySchema, stockRecordResultSchema } from './stock';
 
 /**
  * Facilities read model and query (plan Step 08, ADR-0048, ADR-0050): the
@@ -32,6 +34,9 @@ const PERMITTED_USE = z.enum([
 ]);
 
 const zoneRect = z.strictObject({ kind: ZONE_KIND, rect: rectSchema });
+const isoDate = z.string().regex(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+/** A run of cells along a grid row: `[row, firstCol, endCol)`. */
+const cellRun = z.tuple([z.int(), z.int(), z.int()]);
 
 const placementView = z.strictObject({
   propertyId: contentId,
@@ -170,16 +175,53 @@ export const facilitiesViewSchema = z.strictObject({
                 }),
               )
               .max(100),
-            /** Cells whose covering differs from the starting surface. */
+            /**
+             * Cells laid by a floor order (Step 09A), as runs along a row of one
+             * material from one order: `[row, firstCol, endCol, materialId,
+             * installationId]`. Every other eligible cell has the starting surface.
+             */
             coverings: z
-              .array(z.strictObject({ col: z.int(), row: z.int(), materialId: contentId }))
+              .array(z.tuple([z.int(), z.int(), z.int(), contentId, z.string().max(40)]))
               .max(LIST_LIMIT),
+            /** Floor orders still under way on this level: their cells are out of use until finished. */
+            works: z
+              .array(
+                z.strictObject({
+                  installationId: z.string().max(40),
+                  materialId: contentId,
+                  completesOn: isoDate,
+                  runs: z.array(cellRun).max(LIST_LIMIT),
+                }),
+              )
+              .max(200),
           }),
         )
         .min(1)
         .max(4),
     })
     .nullable(),
+  /** Every floor order the company has placed, oldest first (Step 09A). */
+  floorOrders: z
+    .array(
+      z.strictObject({
+        id: z.string().max(40),
+        propertyId: contentId,
+        address: name,
+        level: z.int().min(0),
+        materialId: contentId,
+        kind: z.enum(['installation', 'replacement', 'mixed']),
+        status: z.enum(['scheduled', 'complete']),
+        orderedOn: isoDate,
+        completesOn: isoDate,
+        cells: z.int().min(0),
+        areaMm2: mm2,
+        replacedCells: z.int().min(0),
+        installCents: nonNegativeCentsString,
+        removalCents: nonNegativeCentsString,
+        costCents: nonNegativeCentsString,
+      }),
+    )
+    .max(MAX_FLOOR_ORDERS),
 });
 
 export type FacilitiesView = z.infer<typeof facilitiesViewSchema>;
@@ -206,9 +248,20 @@ export const simulationQuerySchema = z.discriminatedUnion('kind', [
     yMm: z.int().min(0).max(1_000_000),
     rotation: z.int().min(0).max(359),
   }),
+  /** What would this floor order cost, how long would it take, and may it be placed? (Step 09A) */
+  z.strictObject({
+    kind: z.literal('floorQuote'),
+    propertyId: contentId,
+    level: z.int().min(0).max(9),
+    materialId: contentId,
+    rectangles: z.array(cellRectSchema).min(1).max(MAX_FLOOR_ORDER_RECTANGLES),
+  }),
+  /** A load unit's or lot's contents, provenance and history (Step 10). */
+  stockRecordQuerySchema,
 ]);
 
 export type SimulationQuery = z.infer<typeof simulationQuerySchema>;
+export type FloorQuoteQuery = Extract<SimulationQuery, { kind: 'floorQuote' }>;
 
 export const queryResultSchema = z.discriminatedUnion('kind', [
   z.strictObject({
@@ -231,6 +284,35 @@ export const queryResultSchema = z.discriminatedUnion('kind', [
     /** The dealer's rigging charge this placement would cost. */
     chargeCents: nonNegativeCentsString,
   }),
+  z.strictObject({
+    kind: z.literal('floorQuote'),
+    /** Whether the order would be accepted now, funds included. */
+    allowed: z.boolean(),
+    /** Why it would be refused, or null. A refusal for want of funds still carries the figures. */
+    refusal: z.string().max(1000).nullable(),
+    /** The figures; null when the order cannot be priced at all. */
+    quote: z
+      .strictObject({
+        cells: z.int().min(0),
+        skippedCells: z.int().min(0),
+        replacedCells: z.int().min(0),
+        areaMm2: mm2,
+        replacedAreaMm2: mm2,
+        removals: z
+          .array(z.strictObject({ materialId: contentId, cells: z.int().min(0), areaMm2: mm2 }))
+          .max(500),
+        installCents: nonNegativeCentsString,
+        removalCents: nonNegativeCentsString,
+        totalCents: nonNegativeCentsString,
+        availableCents: z.string().regex(/^-?(?:0|[1-9][0-9]{0,18})$/),
+        workDays: z.int().min(1),
+        completesOn: isoDate,
+      })
+      .nullable(),
+  }),
+  stockRecordResultSchema,
 ]);
 
 export type QueryResult = z.infer<typeof queryResultSchema>;
+export type PlacementResult = Extract<QueryResult, { kind: 'placement' }>;
+export type FloorQuoteResult = Extract<QueryResult, { kind: 'floorQuote' }>;

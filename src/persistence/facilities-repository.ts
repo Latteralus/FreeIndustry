@@ -10,6 +10,8 @@ import { FEATURE_KINDS, UTILITY_KINDS, type Building, type Level } from '../doma
 import {
   FLOOR_MATERIAL_CATEGORIES,
   INSTALLATION_KINDS,
+  INSTALLATION_STATUSES,
+  type CellRun,
   type CoveringInstallation,
   type FloorCovering,
   type FloorMaterial,
@@ -29,6 +31,7 @@ import { bigCell, int64, intCell, textCell, type SqliteDatabase } from './databa
 /** Facilities tables, children before parents, so they can be cleared in this order. */
 export const FACILITIES_TABLES = [
   'floor_cell_coverings',
+  'floor_covering_installation_runs',
   'floor_covering_installations',
   'equipment',
   'building_stairs',
@@ -208,22 +211,39 @@ export function writeFacilities(db: SqliteDatabase, facilities: Facilities | nul
   }
 
   const installation = db.prepare(
-    `INSERT INTO floor_covering_installations (ordinal, id, property_id, firm_id, game_time_ms, kind,
-       cells, area_mm2, cost_cents, journal_entry_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO floor_covering_installations (ordinal, id, property_id, level, material_id,
+       firm_id, game_time_ms, completes_at_ms, status, kind, cells, area_mm2, replaced_cells,
+       replaced_area_mm2, install_cents, removal_cents, cost_cents, journal_entry_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const run = db.prepare(
+    `INSERT INTO floor_covering_installation_runs (installation_id, position, row, first_col, end_col)
+     VALUES (?, ?, ?, ?, ?)`,
   );
   for (const item of facilities.installations) {
     installation.run(
       ordinalOf(item.id),
       item.id,
       item.propertyId,
+      item.level,
+      item.materialId,
       item.firmId,
       int64(item.atMs, 'Installation time'),
+      int64(item.completesAtMs, 'Installation completion'),
+      item.status,
       item.kind,
       item.cells,
       int64(item.areaMm2, 'Installation area'),
+      item.replacedCells,
+      int64(item.replacedAreaMm2, 'Installation replaced area'),
+      int64(item.installCents, 'Installation charge'),
+      int64(item.removalCents, 'Removal charge'),
       int64(item.costCents, 'Installation cost'),
       item.journalEntryId,
     );
+    item.runs.forEach(([row, from, to], index) => {
+      run.run(item.id, index + 1, row, from, to);
+    });
   }
   const covering = db.prepare(
     `INSERT INTO floor_cell_coverings (property_id, level, col, row, material_id, installation_id)
@@ -446,18 +466,39 @@ export function readFacilities(db: SqliteDatabase): Facilities | null {
             },
     };
   });
+  const runs = grouped(
+    db,
+    'SELECT * FROM floor_covering_installation_runs ORDER BY installation_id, position',
+    (row) => textCell(row['installation_id'], 'run installation'),
+  );
   const installations = all(db, 'SELECT * FROM floor_covering_installations ORDER BY ordinal').map(
-    (row): CoveringInstallation => ({
-      id: idCell('floor-installation', row['id'], 'installation id'),
-      propertyId: textCell(row['property_id'], 'installation property'),
-      firmId: idCell('firm', row['firm_id'], 'installation firm'),
-      atMs: bigCell(row['game_time_ms'], 'installation time'),
-      kind: oneOf(INSTALLATION_KINDS, row['kind'], 'installation kind'),
-      cells: intCell(row['cells'], 'installation cells'),
-      areaMm2: bigCell(row['area_mm2'], 'installation area'),
-      costCents: bigCell(row['cost_cents'], 'installation cost'),
-      journalEntryId: idCell('entry', row['journal_entry_id'], 'installation entry'),
-    }),
+    (row): CoveringInstallation => {
+      const id = idCell('floor-installation', row['id'], 'installation id');
+      return {
+        id,
+        propertyId: textCell(row['property_id'], 'installation property'),
+        level: intCell(row['level'], 'installation level'),
+        materialId: textCell(row['material_id'], 'installation material'),
+        firmId: idCell('firm', row['firm_id'], 'installation firm'),
+        atMs: bigCell(row['game_time_ms'], 'installation time'),
+        completesAtMs: bigCell(row['completes_at_ms'], 'installation completion'),
+        status: oneOf(INSTALLATION_STATUSES, row['status'], 'installation status'),
+        kind: oneOf(INSTALLATION_KINDS, row['kind'], 'installation kind'),
+        cells: intCell(row['cells'], 'installation cells'),
+        areaMm2: bigCell(row['area_mm2'], 'installation area'),
+        replacedCells: intCell(row['replaced_cells'], 'installation replaced cells'),
+        replacedAreaMm2: bigCell(row['replaced_area_mm2'], 'installation replaced area'),
+        installCents: bigCell(row['install_cents'], 'installation charge'),
+        removalCents: bigCell(row['removal_cents'], 'removal charge'),
+        costCents: bigCell(row['cost_cents'], 'installation cost'),
+        journalEntryId: idCell('entry', row['journal_entry_id'], 'installation entry'),
+        runs: (runs.get(id) ?? []).map((cells): CellRun => [
+          intCell(cells['row'], 'run row'),
+          intCell(cells['first_col'], 'run first column'),
+          intCell(cells['end_col'], 'run end column'),
+        ]),
+      };
+    },
   );
   const coverings = all(
     db,

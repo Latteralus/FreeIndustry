@@ -23,6 +23,7 @@ import {
   uninstallEquipment,
   type Facilities,
 } from '../domain/facilities';
+import { completeFloorWorks, orderFloorCovering } from '../domain/floor-works';
 import { isEntityIdOf, type EntityId } from '../domain/ids';
 import {
   availableFundsCents,
@@ -40,11 +41,15 @@ import {
   type RealEstate,
 } from '../domain/real-estate';
 import { reject, Rejection } from '../domain/rejection';
+import type { Stock } from '../domain/stock';
+import { stockProblems } from '../domain/stock-invariants';
+import { floorObstacles, receiveTestDelivery, scrapStock } from '../domain/stock-operations';
 import { MS_PER_DAY, type CivilDate } from '../domain/time';
 import type { FreeIndustryState } from '../domain/world-state';
 import { decodeCompany, encodeCompany } from './company-codec';
 import { decodeFacilities, encodeFacilities } from './facilities-codec';
 import { decodeRealEstate, encodeRealEstate } from './real-estate-codec';
+import { decodeStock, encodeStock } from './stock-codec';
 import {
   defineCommand,
   defineEvent,
@@ -58,14 +63,17 @@ import {
  * (ADR-0024); from Step 05 the company and its books (ADR-0031, ADR-0032);
  * from Step 07 cities, property and leases (ADR-0037, ADR-0038); from
  * Step 08 building structure, equipment and the floor-covering layer
- * (ADR-0047, ADR-0048). Every later system adds its state slices, commands,
- * events and periodic decision cycles here.
+ * (ADR-0047, ADR-0048); from Step 09A floor-covering orders and the
+ * contractor's works (ADR-0052); from Step 10 physical stock (ADR-0053 –
+ * ADR-0055). Every later system adds its state slices, commands, events and
+ * periodic decision cycles here.
  *
- * Rules version 1 covers all of them: Steps 05, 07 and 08 only *added*
- * commands, events and state slices that are absent from older worlds (and
- * left out of the encoding while absent), so every world made before them
- * continues exactly as it would have, with the same fingerprints (ADR-0033,
- * ADR-0039, ADR-0049).
+ * Rules version 1 covers all of them: Steps 05, 07, 08, 09A and 10 only
+ * *added* commands, events, state and placement problems that need the new
+ * state to arise (absent or empty in older worlds, and left out of the
+ * encoding while absent), so every world made before them continues exactly
+ * as it would have, with the same fingerprints (ADR-0033, ADR-0039,
+ * ADR-0049, ADR-0052, ADR-0056).
  */
 
 /**
@@ -112,14 +120,22 @@ const stateSchema = z.strictObject({
   realEstate: z.unknown().optional(),
   /** Absent in worlds created before Step 08 (ADR-0049). */
   facilities: z.unknown().optional(),
+  /** Absent in worlds created before Step 10 (ADR-0055). */
+  stock: z.unknown().optional(),
 });
 
 /**
- * A world setup (ADR-0037): `{ realEstate, facilities }` from Step 08. A
- * bare real-estate encoding is still accepted and builds a world without
- * facilities, exactly as Step 07 did (tests use it for hand-made estates).
+ * A world setup (ADR-0037): `{ realEstate, facilities }` from Step 08, and
+ * `stock` (the product and container catalogs) from Step 10. A setup without
+ * `stock` builds a world without stock records, as Step 09A did; a bare
+ * real-estate encoding still builds a world without facilities, exactly as
+ * Step 07 did (tests use both for hand-made worlds).
  */
-const setupSchema = z.strictObject({ realEstate: z.unknown(), facilities: z.unknown() });
+const setupSchema = z.strictObject({
+  realEstate: z.unknown(),
+  facilities: z.unknown(),
+  stock: z.unknown().optional(),
+});
 
 /** Counterparty of the development-only test obligations (ADR-0033). */
 const DIAGNOSTIC_LANDLORD = 'Diagnostic landlord';
@@ -146,12 +162,25 @@ const leaseEndsPayload = z.strictObject({
     .refine((id): id is EntityId<'lease'> => isEntityIdOf('lease', id), 'Expected a lease ID'),
 });
 
-/** A new world's real estate and facilities from its setup: content only, nothing leased or owned. */
-function newWorld(setup: unknown): { realEstate: RealEstate; facilities: Facilities | null } {
+const floorWorksPayload = z.strictObject({
+  installationId: z
+    .string()
+    .refine(
+      (id): id is EntityId<'floor-installation'> => isEntityIdOf('floor-installation', id),
+      'Expected a floor installation ID',
+    ),
+});
+
+/** A new world's slices from its setup: content only, nothing leased, owned or in stock. */
+function newWorld(setup: unknown): {
+  realEstate: RealEstate;
+  facilities: Facilities | null;
+  stock: Stock | null;
+} {
   const parsed = setupSchema.safeParse(setup);
   const realEstate = newRealEstate(parsed.success ? parsed.data.realEstate : setup);
   if (!parsed.success) {
-    return { realEstate, facilities: null };
+    return { realEstate, facilities: null, stock: null };
   }
   const facilities = decodeFacilities(parsed.data.facilities);
   if (
@@ -165,7 +194,24 @@ function newWorld(setup: unknown): { realEstate: RealEstate; facilities: Facilit
   if (problems.length > 0) {
     throw new Error(`Invalid world setup: ${problems.slice(0, 5).join('; ')}`);
   }
-  return { realEstate, facilities };
+  if (parsed.data.stock === undefined) {
+    return { realEstate, facilities, stock: null };
+  }
+  const stock = decodeStock(parsed.data.stock);
+  if (
+    stock.loadUnits.length > 0 ||
+    stock.lots.length > 0 ||
+    stock.receipts.length > 0 ||
+    stock.movements.length > 0 ||
+    stock.reservations.length > 0
+  ) {
+    throw new Error('A new world cannot start with stock');
+  }
+  const stockIssues = stockProblems(stock, facilities, realEstate, null);
+  if (stockIssues.length > 0) {
+    throw new Error(`Invalid world setup: ${stockIssues.slice(0, 5).join('; ')}`);
+  }
+  return { realEstate, facilities, stock };
 }
 
 /** A new world's real estate from its setup: content only, nothing leased yet. */
@@ -191,6 +237,12 @@ function noCompany(): Rejection {
 function noFacilities(): Rejection {
   return reject(
     'This world has no equipment or building layouts: it was created before they existed (plan Step 08). Start a new company to lay out a factory.',
+  );
+}
+
+function noStock(): Rejection {
+  return reject(
+    'This world has no stock records: it was created before physical stock existed (plan Step 10). Start a new company to receive goods.',
   );
 }
 
@@ -223,6 +275,8 @@ function place(
     state.company,
     { equipmentId, placement, move },
     ruleContext(context),
+    // Stock standing on the floor is in the way (Step 10, ADR-0054).
+    state.stock ? floorObstacles(state.stock, placement.propertyId) : [],
   );
   if (placed instanceof Rejection) {
     return placed;
@@ -399,6 +453,81 @@ const commands: Readonly<Record<RuleCommandType, CommandDefinition<FreeIndustryS
       return { ...state, facilities };
     },
   ),
+  'facility.installFloorCovering': defineCommand(
+    COMMANDS['facility.installFloorCovering'].payload,
+    (state: FreeIndustryState, payload, context) => {
+      if (!state.company) {
+        return noCompany();
+      }
+      if (!state.facilities || !state.realEstate) {
+        return noFacilities();
+      }
+      const ordered = orderFloorCovering(
+        state.facilities,
+        state.realEstate,
+        state.company,
+        payload,
+        { ...ruleContext(context), epoch: context.epoch },
+      );
+      if (ordered instanceof Rejection) {
+        return ordered;
+      }
+      const { quote } = ordered;
+      context.schedule({
+        type: 'facilities.floorWorksComplete',
+        atMs: quote.completesAtMs,
+        payload: { installationId: ordered.installationId },
+      });
+      context.record('facilities.floorCoveringOrdered', {
+        installationId: ordered.installationId,
+        propertyId: quote.propertyId,
+        level: quote.level,
+        materialId: quote.materialId,
+        cells: quote.cells,
+        skippedCells: quote.skippedCells,
+        areaMm2: encodeBigInt(quote.areaMm2),
+        installCents: encodeBigInt(quote.installCents),
+        removalCents: encodeBigInt(quote.removalCents),
+        invoiceId: ordered.invoiceId,
+        completesAtMs: encodeBigInt(quote.completesAtMs),
+      });
+      return { ...state, facilities: ordered.facilities, company: ordered.company };
+    },
+  ),
+  'stock.scrap': defineCommand(
+    COMMANDS['stock.scrap'].payload,
+    (state: FreeIndustryState, payload, context) => {
+      if (!state.company) {
+        return noCompany();
+      }
+      if (!state.stock) {
+        return noStock();
+      }
+      const scrapped = scrapStock(
+        state.stock,
+        state.company,
+        {
+          lotId: payload.lotId,
+          quantityMicro: BigInt(payload.quantityMicro),
+          serials: payload.serials,
+          reason: payload.reason,
+        },
+        ruleContext(context),
+      );
+      if (scrapped instanceof Rejection) {
+        return scrapped;
+      }
+      context.record('stock.scrapped', {
+        movementId: scrapped.movementId,
+        lotId: payload.lotId,
+        scrapLotId: scrapped.lotId,
+        quantityMicro: payload.quantityMicro,
+        reason: payload.reason,
+        writtenOffCents: encodeBigInt(scrapped.costCents),
+      });
+      return { ...state, stock: scrapped.stock, company: scrapped.company };
+    },
+  ),
   'finance.payInvoice': defineCommand(
     COMMANDS['finance.payInvoice'].payload,
     (state: FreeIndustryState, { invoiceId, amountCents }, context) => {
@@ -461,6 +590,49 @@ const commands: Readonly<Record<RuleCommandType, CommandDefinition<FreeIndustryS
       return { ...state, company: added.company };
     },
   ),
+  'diagnostics.deliverTestStock': defineCommand(
+    COMMANDS['diagnostics.deliverTestStock'].payload,
+    (state: FreeIndustryState, payload, context) => {
+      if (!state.company) {
+        return noCompany();
+      }
+      if (!state.facilities || !state.realEstate) {
+        return noFacilities();
+      }
+      if (!state.stock) {
+        return noStock();
+      }
+      const received = receiveTestDelivery(
+        state.stock,
+        state.facilities,
+        state.realEstate,
+        state.company,
+        {
+          productId: payload.productId,
+          grade: payload.grade,
+          containerTypeId: payload.containerTypeId,
+          containers: payload.containers,
+          quantityPerContainerMicro: BigInt(payload.quantityPerContainerMicro),
+          palletTypeId: payload.palletTypeId,
+          containersPerPallet: payload.containersPerPallet,
+          totalCostCents: BigInt(payload.totalCostCents),
+        },
+        ruleContext(context),
+      );
+      if (received instanceof Rejection) {
+        return received;
+      }
+      context.record('stock.received', {
+        receiptId: received.receiptId,
+        invoiceId: received.invoiceId,
+        productId: payload.productId,
+        loadUnitIds: [...received.loadUnitIds],
+        lotIds: [...received.lotIds],
+        totalCostCents: payload.totalCostCents,
+      });
+      return { ...state, stock: received.stock, company: received.company };
+    },
+  ),
   'diagnostics.recordProbe': defineCommand(
     COMMANDS['diagnostics.recordProbe'].payload,
     (state: FreeIndustryState, { label }) => ({
@@ -494,9 +666,9 @@ export const FREEINDUSTRY_RULES: SimulationRules<FreeIndustryState> = {
   initialState: (_context, setup) => ({
     diagnostics: INITIAL_DIAGNOSTICS,
     company: null,
-    ...(setup === null ? { realEstate: null, facilities: null } : newWorld(setup)),
+    ...(setup === null ? { realEstate: null, facilities: null, stock: null } : newWorld(setup)),
   }),
-  encodeState: ({ diagnostics, company, realEstate, facilities }) => ({
+  encodeState: ({ diagnostics, company, realEstate, facilities, stock }) => ({
     diagnostics: {
       ...diagnostics,
       lastFiredProbe: diagnostics.lastFiredProbe && {
@@ -511,17 +683,20 @@ export const FREEINDUSTRY_RULES: SimulationRules<FreeIndustryState> = {
     ...(realEstate ? { realEstate: encodeRealEstate(realEstate) } : {}),
     // Left out while absent, so worlds made before Step 08 keep their fingerprints.
     ...(facilities ? { facilities: encodeFacilities(facilities) } : {}),
+    // Left out while absent, so worlds made before Step 10 keep their fingerprints.
+    ...(stock ? { stock: encodeStock(stock) } : {}),
   }),
   decodeState: (json) => {
-    const { diagnostics, company, realEstate, facilities } = stateSchema.parse(json);
+    const { diagnostics, company, realEstate, facilities, stock } = stateSchema.parse(json);
     return {
       diagnostics,
       company: company === undefined ? null : decodeCompany(company),
       realEstate: realEstate === undefined ? null : decodeRealEstate(realEstate),
       facilities: facilities === undefined ? null : decodeFacilities(facilities),
+      stock: stock === undefined ? null : decodeStock(stock),
     };
   },
-  checkInvariants: ({ diagnostics, company, realEstate, facilities }) => [
+  checkInvariants: ({ diagnostics, company, realEstate, facilities, stock }) => [
     ...(diagnostics.pendingProbes > MAX_PENDING_PROBES
       ? [`${diagnostics.pendingProbes} probes pending; at most ${MAX_PENDING_PROBES} allowed`]
       : []),
@@ -533,6 +708,9 @@ export const FREEINDUSTRY_RULES: SimulationRules<FreeIndustryState> = {
       ? facilitiesProblems(facilities, realEstate, company).map(
           (problem) => `facilities: ${problem}`,
         )
+      : []),
+    ...(stock
+      ? stockProblems(stock, facilities, realEstate, company).map((problem) => `stock: ${problem}`)
       : []),
   ],
   commands,
@@ -573,6 +751,28 @@ export const FREEINDUSTRY_RULES: SimulationRules<FreeIndustryState> = {
           company: ended.company,
           facilities,
         };
+      },
+    }),
+    /**
+     * The floor contractor finishes an order: its cells take the new
+     * material. Equipment and structure are untouched (ADR-0046, ADR-0052).
+     */
+    'facilities.floorWorksComplete': defineEvent({
+      lane: 'economic',
+      notable: true,
+      payload: floorWorksPayload,
+      handle: (state: FreeIndustryState, { installationId }, context) => {
+        if (!state.facilities) {
+          throw new Error(`Floor works ${installationId} finished in a world without facilities`);
+        }
+        const facilities = completeFloorWorks(state.facilities, installationId);
+        const job = facilities.installations.find((item) => item.id === installationId);
+        context.record('facilities.floorWorksCompleted', {
+          installationId,
+          propertyId: job?.propertyId ?? null,
+          cells: job?.cells ?? 0,
+        });
+        return { ...state, facilities };
       },
     }),
     /** An obligation occurrence falls: the bill arrives as a payable invoice. */

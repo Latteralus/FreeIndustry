@@ -13,6 +13,7 @@ import {
   placement,
   refusal,
   submit,
+  injectCoverings,
   withCoverings,
   type World,
 } from '../../support/facility-world';
@@ -353,10 +354,10 @@ describe('floor coverings and equipment are independent layers', () => {
 
   it('a covering on a cell outside the usable floor, or of an unknown material, breaks the invariants', () => {
     expect(() =>
-      withCoverings(leasedWorld(), [{ level: 0, col: 6, row: 0, materialId: 'epoxy-grey' }]),
+      injectCoverings(leasedWorld(), [{ level: 0, col: 6, row: 0, materialId: 'epoxy-grey' }]),
     ).toThrow(/not an eligible cell/);
     expect(() =>
-      withCoverings(leasedWorld(), [{ level: 0, col: 0, row: 0, materialId: 'gold-leaf' }]),
+      injectCoverings(leasedWorld(), [{ level: 0, col: 0, row: 0, materialId: 'gold-leaf' }]),
     ).toThrow(/unknown material gold-leaf/);
   });
 });

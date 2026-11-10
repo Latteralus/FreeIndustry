@@ -26,7 +26,7 @@ export interface RectMm {
 }
 
 /** The construction grid pitch: one world-wide constant (ADR-0045). */
-const CONSTRUCTION_GRID_MM = 500;
+export const CONSTRUCTION_GRID_MM = 500;
 
 /** Area of one full construction-grid cell, in mm². */
 export const CELL_AREA_MM2 = CONSTRUCTION_GRID_MM * CONSTRUCTION_GRID_MM;

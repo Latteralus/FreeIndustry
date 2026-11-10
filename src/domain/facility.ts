@@ -196,6 +196,8 @@ interface KeepClearZone {
   readonly rect: RectMm;
   /** A personnel door or stair head: where people enter the level. */
   readonly entrance: boolean;
+  /** The listing's door this landing is inside (index in its doors); null for other zones. */
+  readonly doorIndex: number | null;
 }
 
 export interface LevelGeometry {
@@ -272,6 +274,7 @@ export function levelGeometry(building: Building, property: Property, level: Lev
           label: `the ${DOOR_NAME[door.kind]} in the ${wall} wall (door ${index + 1})`,
           rect: zone,
           entrance: door.kind === 'personnel',
+          doorIndex: index,
         });
       }
     });
@@ -284,7 +287,13 @@ export function levelGeometry(building: Building, property: Property, level: Lev
         UTILITY_ACCESS_DEPTH_MM,
       );
       if (zone) {
-        keepClear.push({ kind: 'utility', label: utility.label, rect: zone, entrance: false });
+        keepClear.push({
+          kind: 'utility',
+          label: utility.label,
+          rect: zone,
+          entrance: false,
+          doorIndex: null,
+        });
       }
     }
   }
@@ -296,6 +305,7 @@ export function levelGeometry(building: Building, property: Property, level: Lev
         label: `the foot of the stair to ${upper}`,
         rect: stair.foot,
         entrance: false,
+        doorIndex: null,
       });
     }
     if (stair.upperLevel === level.index) {
@@ -304,6 +314,7 @@ export function levelGeometry(building: Building, property: Property, level: Lev
         label: `the head of the stair to ${upper}`,
         rect: stair.head,
         entrance: true,
+        doorIndex: null,
       });
     }
   }

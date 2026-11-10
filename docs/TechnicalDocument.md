@@ -3,7 +3,7 @@
 ## Technical Architecture & Gameplay Systems Specification
 
 **Project designation:** Independent modern spiritual successor to _Free Enterpri$e / Free Enterprise_ (Tsunami Media, 1996)  
-**Document status:** Architecture and requirements baseline. Revised 2026-11-08 by owner decision: factory views are true top-down only, and the spec now defines the physical coordinate system and floor coverings (DECISIONS ADR-0044 – ADR-0046)  
+**Document status:** Architecture and requirements baseline. Revised 2026-11-08 by owner decision: factory views are true top-down only, and the spec now defines the physical coordinate system and floor coverings (DECISIONS ADR-0044 – ADR-0046); the floor-covering owner decisions were settled for Step 09A (ADR-0052)  
 **Target platform:** Windows desktop, offline single-player  
 **Primary stack:** Electron + TypeScript + PixiJS + React + SQLite  
 **Development audience:** Human project owner and AI coding agents working in VS Code
@@ -350,6 +350,7 @@ Layers 1, 2, 4 and 5 are authoritative state; layers 3 and 6 are presentation. T
 - Replacing a covering is distinguishable from initial installation: removing the old material is priced and posted separately.
 - Orders respect available cash (and credit once banking exists), post balanced journal entries through the existing books, persist across saves, and are deterministic and auditable.
 - There are no cosmetic purchases that bypass the simulation.
+- **Owner decisions (2026-11-08, ADR-0052).** An outside floor contractor does the work: it is paid when the order is placed and finishes after whole days of work. The cells are out of use until then: no other floor order and no new equipment may go on them, while equipment already standing there is left exactly as it is. An order that would finish after the lease ends is refused. Installation and removal are both expensed, on separate accounts. Coverings stay with the building when a lease ends.
 
 **No gameplay effects yet.** Initially a covering affects only appearance and cost. The material schema may carry optional functional fields (slip resistance, durability and wear, maintenance and cleaning, process suitability, and the covering's own load rating, which never raises the slab's). They have no effect until a step specifies a rule and records it in DECISIONS.
 
@@ -511,21 +512,21 @@ Use `better-sqlite3` only in the worker/native Node context, never in the unpriv
 
 ### 10.2 Core relational schema (logical baseline)
 
-| Table / group                                                                                                                | Role and primary relationships                                                        |
-| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `worlds`, `world_metadata`, `schema_migrations`                                                                              | World identity, seed, content/version, integrity, migration version                   |
-| `cities`, `districts`, `parcels`, `properties`, `facility_floors`, `floor_obstacles`, `dock_points`                          | Real estate, true physical geometry, occupancy and transport access                   |
-| `floor_materials`, `floor_cell_coverings`, `floor_covering_installations`                                                    | Floor covering per 500 mm cell (sparse), and who installed it at what cost (ADR-0046) |
-| `firms`, `firm_facilities`, `ownerships`, `leases`, `bank_accounts`, `loans`                                                 | Companies, capital, leases and borrowing                                              |
-| `people`, `employment`, `roles`, `skills`, `employee_skill_levels`, `shifts`, `attendance`                                   | Persistent staff and labor conditions                                                 |
-| `workstations`, `machine_instances`, `machine_ports`, `machine_capabilities`, `machine_state`                                | Manufacturing equipment and physical operating stations                               |
-| `products`, `recipes`, `recipe_inputs`, `recipe_outputs`, `technologies`, `research_projects`                                | Manufacturing definitions and research                                                |
-| `locations`, `stock_lots`, `serialized_items`, `load_units`, `lot_contents`, `stock_movements`, `stock_reservations`         | Physical goods and provenance                                                         |
-| `work_orders`, `tasks`, `task_assignments`, `task_events`, `machine_runs`, `quality_inspections`                             | Operations, task states and output verification                                       |
-| `market_offers`, `rfqs`, `quotes`, `contracts`, `contract_lines`, `purchase_orders`, `sales_orders`, `shipments`, `invoices` | Commercial actions and deliveries                                                     |
-| `ledger_accounts`, `journal_entries`, `journal_lines`, `payment_allocations`, `inventory_cost_layers`                        | Double-entry accounting and cost basis                                                |
-| `manager_policies`, `delegation_limits`, `approvals`, `memos`, `audit_events`                                                | Player control, staff automation and transparency                                     |
-| `simulation_events`, `world_snapshots`, `command_log`, `render_projections`, `save_metadata`                                 | Deterministic replay, resumability, indexed view data                                 |
+| Table / group                                                                                                                                                  | Role and primary relationships                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `worlds`, `world_metadata`, `schema_migrations`                                                                                                                | World identity, seed, content/version, integrity, migration version                                                               |
+| `cities`, `districts`, `parcels`, `properties`, `facility_floors`, `floor_obstacles`, `dock_points`                                                            | Real estate, true physical geometry, occupancy and transport access                                                               |
+| `floor_materials`, `floor_cell_coverings`, `floor_covering_installations`, `floor_covering_installation_runs`                                                  | Floor covering per 500 mm cell (sparse), and each contractor order: its cells, charges, dates and status (ADR-0046, ADR-0052)     |
+| `firms`, `firm_facilities`, `ownerships`, `leases`, `bank_accounts`, `loans`                                                                                   | Companies, capital, leases and borrowing                                                                                          |
+| `people`, `employment`, `roles`, `skills`, `employee_skill_levels`, `shifts`, `attendance`                                                                     | Persistent staff and labor conditions                                                                                             |
+| `workstations`, `machine_instances`, `machine_ports`, `machine_capabilities`, `machine_state`                                                                  | Manufacturing equipment and physical operating stations                                                                           |
+| `products`, `recipes`, `recipe_inputs`, `recipe_outputs`, `technologies`, `research_projects`                                                                  | Manufacturing definitions and research                                                                                            |
+| `products`, `container_types`, `stock_receipts`, `load_units`, `stock_lots`, `stock_lot_parents`, `stock_lot_serials`, `stock_movements`, `stock_reservations` | Physical goods and provenance: each lot in one load unit, each load unit on a floor, in another or at a port (ADR-0054, ADR-0056) |
+| `work_orders`, `tasks`, `task_assignments`, `task_events`, `machine_runs`, `quality_inspections`                                                               | Operations, task states and output verification                                                                                   |
+| `market_offers`, `rfqs`, `quotes`, `contracts`, `contract_lines`, `purchase_orders`, `sales_orders`, `shipments`, `invoices`                                   | Commercial actions and deliveries                                                                                                 |
+| `ledger_accounts`, `journal_entries`, `journal_lines`, `payment_allocations`, `inventory_cost_layers`                                                          | Double-entry accounting and cost basis                                                                                            |
+| `manager_policies`, `delegation_limits`, `approvals`, `memos`, `audit_events`                                                                                  | Player control, staff automation and transparency                                                                                 |
+| `simulation_events`, `world_snapshots`, `command_log`, `render_projections`, `save_metadata`                                                                   | Deterministic replay, resumability, indexed view data                                                                             |
 
 Use stable UUID/ULID-like IDs (or deterministic sequence-based IDs during simulation), foreign keys, explicit units, and schema migration guards. Never store core simulation state only as an opaque JSON blob. JSON columns can hold versioned details, but financial, inventory, people, and contract relationships should remain queryable.
 

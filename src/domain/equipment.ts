@@ -275,6 +275,8 @@ type PlacementProblemCode =
   | 'keep-clear'
   | 'equipment'
   | 'zone'
+  | 'stock'
+  | 'floor-works'
   | 'route';
 
 /** One violated placement rule, with the rectangle where it happens when there is one. */
@@ -285,7 +287,7 @@ export interface PlacementProblem {
 }
 
 /** An item standing in the building (or proposed), with its type and plan shape. */
-interface Standing {
+export interface Standing {
   readonly id: string | null;
   readonly type: EquipmentType;
   readonly placement: Placement;
@@ -506,6 +508,8 @@ const PRIORITY: readonly PlacementProblemCode[] = [
   'forbidden',
   'equipment',
   'zone',
+  'stock',
+  'floor-works',
   'height',
   'floor-load',
   'route',
@@ -524,8 +528,15 @@ function byPriority(problems: PlacementProblem[]): PlacementProblem[] {
     .map(({ problem }) => problem);
 }
 
-/** Walkway problems of one level with `items` standing on it. */
-function routeProblems(geometry: LevelGeometry, items: readonly Standing[]): PlacementProblem[] {
+/**
+ * Walkway problems of one level with `items` standing on it, and `blocked`
+ * other footprints on the floor (stock standing there, Step 10).
+ */
+export function routeProblems(
+  geometry: LevelGeometry,
+  items: readonly Standing[],
+  blocked: readonly RectMm[] = [],
+): PlacementProblem[] {
   const reachZones = items.flatMap((item) =>
     item.shape.zones
       .filter(({ zone }) => zone.kind === 'operator' || zone.kind === 'maintenance')
@@ -533,7 +544,7 @@ function routeProblems(geometry: LevelGeometry, items: readonly Standing[]): Pla
   );
   const reach = walkwayReach(
     geometry,
-    items.map((item) => item.shape.footprint),
+    [...items.map((item) => item.shape.footprint), ...blocked],
     reachZones.map((target) => target.rect),
   );
   const problems: PlacementProblem[] = [];
@@ -591,16 +602,68 @@ export function standing(
   return { id, type, placement, shape: placedShape(type, placement, placement.rotation) };
 }
 
+/** Floor being laid on a level: the cells of one contractor's job, as rectangles (ADR-0052). */
+export interface FloorWorksArea {
+  readonly level: number;
+  readonly label: string;
+  readonly rects: readonly RectMm[];
+}
+
+/** A load unit standing on a floor (Step 10, ADR-0054): equipment may not go on it. */
+export interface StockObstacle {
+  readonly id: string;
+  readonly level: number;
+  /** "the Wooden pallet (load-unit:3)". */
+  readonly label: string;
+  readonly rect: RectMm;
+}
+
+/** Stock in the way of a footprint or of its operator, maintenance and clearance zones. */
+function stockProblems(
+  type: EquipmentType,
+  shape: PlacedShape,
+  stock: readonly StockObstacle[],
+): PlacementProblem[] {
+  const problems: PlacementProblem[] = [];
+  for (const unit of stock) {
+    const shared = intersection(unit.rect, shape.footprint);
+    if (shared) {
+      problems.push({
+        code: 'stock',
+        message: `The ${type.name} would stand on ${unit.label}; the stock must be moved first`,
+        rect: shared,
+      });
+    }
+    for (const { zone, rect: zoneRect } of shape.zones) {
+      const blocked =
+        zone.kind === 'input' || zone.kind === 'output' ? null : intersection(zoneRect, unit.rect);
+      if (blocked) {
+        problems.push({
+          code: 'zone',
+          message: `The ${zoneLabel(zone)} of the ${type.name} is obstructed by ${unit.label}`,
+          rect: blocked,
+        });
+      }
+    }
+  }
+  return problems;
+}
+
 /**
  * Everything wrong with placing `type` at `placement` among `others` (the
  * items already installed in the same building, not including the one being
- * moved). Empty when the placement is allowed.
+ * moved), with `works` the floor areas under a contractor's works, which no
+ * new footprint may stand on, and `stock` the load units standing on the
+ * building's floors, which it may neither stand on nor wall in. Empty when
+ * the placement is allowed.
  */
 export function placementProblems(
   site: PlacementSite,
   type: EquipmentType,
   placement: Placement,
   others: readonly Standing[],
+  works: readonly FloorWorksArea[] = [],
+  stock: readonly StockObstacle[] = [],
 ): PlacementProblem[] {
   const framing = framingProblems(placement);
   const candidate = standing(null, type, placement);
@@ -612,9 +675,36 @@ export function placementProblems(
   if (!level || own.some((problem) => problem.code === 'level')) {
     return own;
   }
+  const footprint = candidate.shape.footprint;
+  const underWorks = works
+    .filter((area) => area.level === level.index)
+    .flatMap((area): PlacementProblem[] => {
+      const shared = area.rects
+        .map((rect) => intersection(rect, footprint))
+        .find((rect) => rect !== null);
+      return shared
+        ? [
+            {
+              code: 'floor-works',
+              message: `The ${type.name} would stand on floor still being laid (${area.label}); place it when the works are finished`,
+              rect: shared,
+            },
+          ]
+        : [];
+    });
   const geometry = levelGeometry(site.building, site.property, level);
   const onLevel = others.filter((other) => other.placement.level === level.index);
-  return byPriority([...own, ...routeProblems(geometry, [...onLevel, candidate])]);
+  const stockHere = stock.filter((unit) => unit.level === level.index);
+  return byPriority([
+    ...own,
+    ...stockProblems(type, candidate.shape, stockHere),
+    ...underWorks,
+    ...routeProblems(
+      geometry,
+      [...onLevel, candidate],
+      stockHere.map((unit) => unit.rect),
+    ),
+  ]);
 }
 
 /** Everything wrong with a whole installed layout (invariants); empty when it is valid. */

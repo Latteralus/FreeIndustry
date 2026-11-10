@@ -45,15 +45,18 @@ function fakeHost(answer: (query: SimulationQuery) => QueryResult) {
   };
 }
 
-const allowed = (query: SimulationQuery): QueryResult => ({
-  kind: 'placement',
-  allowed: true,
-  refusal: null,
-  problems: [],
-  footprint: { x: query.xMm, y: query.yMm, width: 450, depth: 1200 },
-  zones: [],
-  chargeCents: '0',
-});
+const allowed = (query: SimulationQuery): QueryResult =>
+  query.kind === 'placement'
+    ? {
+        kind: 'placement',
+        allowed: true,
+        refusal: null,
+        problems: [],
+        footprint: { x: query.xMm, y: query.yMm, width: 450, depth: 1200 },
+        zones: [],
+        chargeCents: '0',
+      }
+    : { kind: 'floorQuote', allowed: false, refusal: 'not used', quote: null };
 
 /** Where a world point is on the canvas host, from the camera it reports (jsdom has no layout: a 0 × 0 viewport). */
 function clientAt(xMm: number, yMm: number) {
@@ -187,11 +190,11 @@ describe('factory layout view', () => {
     const plan = screen.getByTestId('facility-floor-plan');
     fireEvent.mouseMove(plan, clientAt(2700, 5700));
     expect(screen.getByTestId('cell-info')).toHaveTextContent(
-      'Cell (5, 11): partial, 0.2 m² · Worn concrete',
+      'Cell (5, 11): partial, 0.15 m² · Worn concrete (the building’s existing floor)',
     );
     fireEvent.mouseMove(plan, clientAt(2000, 2000));
     expect(screen.getByTestId('cell-info')).toHaveTextContent(
-      'Cell (4, 4): full, 0.3 m² · Worn concrete',
+      'Cell (4, 4): full, 0.25 m² · Worn concrete',
     );
   });
 

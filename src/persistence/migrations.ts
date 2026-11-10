@@ -4,6 +4,8 @@ import { SCHEMA_V1 } from './schema-v1';
 import { SCHEMA_V2 } from './schema-v2';
 import { SCHEMA_V3 } from './schema-v3';
 import { SCHEMA_V4 } from './schema-v4';
+import { SCHEMA_V5 } from './schema-v5';
+import { SCHEMA_V6 } from './schema-v6';
 
 /**
  * Save-schema migrations (spec §10.4, ADR-0027). The schema version is
@@ -71,6 +73,33 @@ export const SAVE_MIGRATIONS: readonly Migration[] = [
     // Worlds saved before Step 08 have no facilities, so the new tables start empty.
     up: (db) => {
       db.exec(SCHEMA_V4);
+    },
+  },
+  {
+    version: 5,
+    description: 'Floor-covering orders as scheduled contractor jobs with their cells (Step 09A)',
+    // No build before Step 09A could order a covering, so both tables must be empty.
+    precondition: (db) => {
+      const rows = (table: string) =>
+        intCell(
+          (db.prepare(`SELECT count(*) AS n FROM ${table}`).get() as { n: unknown }).n,
+          table,
+        );
+      return rows('floor_covering_installations') + rows('floor_cell_coverings') === 0
+        ? []
+        : ['the save has floor coverings, which no build before Step 09A could create'];
+    },
+    up: (db) => {
+      db.exec(SCHEMA_V5);
+    },
+  },
+  {
+    version: 6,
+    description:
+      'Products, containers, load units, lots, stock movements and reservations (Step 10)',
+    // Worlds saved before Step 10 have no stock, so the new tables start empty.
+    up: (db) => {
+      db.exec(SCHEMA_V6);
     },
   },
 ];

@@ -77,6 +77,8 @@ describe('the production window catalog', () => {
       'saves',
       'help',
       'equipment',
+      'floor-materials',
+      'stock',
       'diagnostics',
     ]);
   });

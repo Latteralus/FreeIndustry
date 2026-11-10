@@ -41,6 +41,7 @@ const OPEN = {
   'Bills and Obligations': ['Finance', 'Bills and Obligations…'],
   'Saved Games': ['File', 'Saved Games…'],
   'Simulation Diagnostics': ['Help', 'Simulation Diagnostics…'],
+  Stock: ['Operations', 'Stock…'],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type WindowTitle = keyof typeof OPEN;
@@ -57,7 +58,7 @@ export async function openWindow(page: Page, title: WindowTitle): Promise<Locato
 /** The diagnostics window on one of its tabs. */
 export async function diagnostics(
   page: Page,
-  tab: 'World' | 'Probes' | 'Test obligations',
+  tab: 'World' | 'Probes' | 'Test obligations' | 'Test delivery',
 ): Promise<Locator> {
   const frame = await openWindow(page, 'Simulation Diagnostics');
   await frame.getByRole('tab', { name: tab }).click();

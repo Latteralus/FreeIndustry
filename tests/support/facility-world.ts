@@ -1,9 +1,6 @@
 import type { Facilities } from '../../src/domain/facilities';
 import type { FloorCovering } from '../../src/domain/floor-covering';
-import { formatEntityId, type AllocateId } from '../../src/domain/ids';
-import { issueInvoice, recordPayment } from '../../src/domain/invoicing';
-import { ensureAccount } from '../../src/domain/ledger';
-import { Rejection } from '../../src/domain/rejection';
+import { formatEntityId } from '../../src/domain/ids';
 import { MS_PER_HOUR } from '../../src/domain/time';
 import type { FreeIndustryState } from '../../src/domain/world-state';
 import { FREEINDUSTRY_RULES } from '../../src/simulation/freeindustry-rules';
@@ -12,10 +9,11 @@ import { estateWorld } from './real-estate-world';
 import { testUuid } from './toy-workshop';
 
 /**
- * Helpers for Step 08 tests: worlds built from the real bundled content
- * with a company leasing premises, buying and placing equipment through the
- * real commands, and (for the floor-covering layer, whose purchase is Step
- * 09A) a world with covering records injected consistently with the books.
+ * Helpers for facilities tests (Steps 08 and 09A): worlds built from the
+ * real bundled content with a company leasing premises, buying and placing
+ * equipment and ordering floor coverings through the real commands, and a
+ * way to write an impossible covering straight into a world's state so the
+ * invariants can be seen to refuse it.
  */
 
 export type World = SimulationKernel<FreeIndustryState>;
@@ -100,98 +98,70 @@ export function placement(
   return { equipmentId, propertyId, level, xMm, yMm, rotation };
 }
 
+/** A cell to cover: its level, position and material. */
+type CellOrder = Omit<FloorCovering, 'installationId' | 'propertyId'>;
+
+/** One order of 1 × 1 rectangles per level and material, as the layout tools could send it. */
+function floorOrders(cells: readonly CellOrder[], propertyId = 'hf-canal-2') {
+  const groups = new Map<string, CellOrder[]>();
+  for (const cell of cells) {
+    const key = `${cell.level}|${cell.materialId}`;
+    groups.set(key, [...(groups.get(key) ?? []), cell]);
+  }
+  return [...groups.values()].map((group) => ({
+    propertyId,
+    level: group[0]?.level ?? 0,
+    materialId: group[0]?.materialId ?? '',
+    rectangles: group.map((cell) => ({ col: cell.col, row: cell.row, cols: 1, rows: 1 })),
+  }));
+}
+
+/** The time the last floor job under way finishes (now if none is). */
+export function worksFinishAt(world: World): bigint {
+  return facilitiesOf(world).installations.reduce(
+    (latest, job) =>
+      job.status === 'scheduled' && job.completesAtMs > latest ? job.completesAtMs : latest,
+    world.nowMs,
+  );
+}
+
 /**
- * The world with floor coverings on `cells` of its premises, recorded as one
- * installation paid from cash by an entry in the books (the shape Step 09A's
- * purchases will produce). The kernel is restored from the modified
- * checkpoint, so every invariant is checked.
+ * The world with floor coverings on `cells` of its premises, ordered from
+ * the floor contractor through the real command (one order per level and
+ * material) and laid: the clock runs until the last job is finished.
  */
 export function withCoverings(
   world: World,
-  cells: readonly Omit<FloorCovering, 'installationId' | 'propertyId'>[],
+  cells: readonly CellOrder[],
+  propertyId = 'hf-canal-2',
+): World {
+  for (const order of floorOrders(cells, propertyId)) {
+    accept(world, 'facility.installFloorCovering', order);
+  }
+  world.advanceTo(worksFinishAt(world));
+  return world;
+}
+
+/**
+ * Restore the world with covering records on `cells` written straight into
+ * its state, bypassing the rules. Used only to show that the invariants
+ * refuse an impossible covering, so it is expected to throw.
+ */
+export function injectCoverings(
+  world: World,
+  cells: readonly CellOrder[],
   propertyId = 'hf-canal-2',
 ): World {
   const checkpoint = world.checkpoint();
-  const state = world.state;
-  const company = state.company;
   const facilities = facilitiesOf(world);
-  const landlord = company?.counterparties.find((party) => party.kind === 'landlord');
-  if (!company || !landlord) {
-    throw new Error('withCoverings needs a company with a landlord');
-  }
-  const ids: Record<string, number> = { ...checkpoint.state.ids };
-  const allocateId: AllocateId = (kind) => {
-    ids[kind] = (ids[kind] ?? 0) + 1;
-    return formatEntityId(kind, ids[kind]);
-  };
-  const context = { nowMs: world.nowMs, allocateId };
-  const installationId = allocateId('floor-installation');
-  const cost = 12_345n;
-  const books = {
-    ...company,
-    ledger: ensureAccount(company.ledger, {
-      code: '1650',
-      name: 'Floor improvements (test)',
-      type: 'asset',
-    }),
-  };
-  const issued = issueInvoice(
-    books,
-    {
-      direction: 'payable',
-      counterpartyId: landlord.id,
-      description: 'Floor covering (test)',
-      lines: [{ account: '1650', description: 'Floor covering (test)', amountCents: cost }],
-      dueAtMs: world.nowMs,
-      obligation: null,
-    },
-    context,
-  );
-  if (issued instanceof Rejection) {
-    throw new Error(issued.reason);
-  }
-  const paid = recordPayment(
-    issued.company,
-    { invoiceId: issued.invoiceId, amountCents: cost, initiatedBy: 'player' },
-    context,
-  );
-  if (paid instanceof Rejection) {
-    throw new Error(paid.reason);
-  }
-  const entryId = issued.company.invoices.find(
-    (invoice) => invoice.id === issued.invoiceId,
-  )?.entryId;
-  if (!entryId) {
-    throw new Error('the invoice has no entry');
-  }
+  const installationId = formatEntityId('floor-installation', 99);
   const coverings = [
     ...facilities.coverings,
     ...cells.map((cell) => ({ ...cell, propertyId, installationId })),
   ].sort((a, b) => a.level - b.level || a.row - b.row || a.col - b.col);
-  const next: FreeIndustryState = {
-    ...state,
-    company: paid.company,
-    facilities: {
-      ...facilities,
-      coverings,
-      installations: [
-        ...facilities.installations,
-        {
-          id: installationId,
-          propertyId,
-          firmId: company.firmId,
-          atMs: world.nowMs,
-          kind: 'installation',
-          cells: cells.length,
-          areaMm2: BigInt(cells.length) * 250_000n,
-          costCents: cost,
-          journalEntryId: entryId,
-        },
-      ],
-    },
-  };
+  const next: FreeIndustryState = { ...world.state, facilities: { ...facilities, coverings } };
   return SimulationKernel.restore(FREEINDUSTRY_RULES, {
-    state: { ...checkpoint.state, ids, domain: FREEINDUSTRY_RULES.encodeState(next) },
+    state: { ...checkpoint.state, domain: FREEINDUSTRY_RULES.encodeState(next) },
     journal: checkpoint.journal,
   });
 }

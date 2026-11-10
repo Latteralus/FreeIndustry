@@ -45,6 +45,7 @@ const ACCOUNT_CODE = /^[0-9]{4}$/;
 export const ACCOUNT = {
   cash: '1010',
   receivables: '1100',
+  inventory: '1300',
   depositsPaid: '1400',
   machinery: '1500',
   payables: '2000',
@@ -52,6 +53,10 @@ export const ACCOUNT = {
   sales: '4000',
   rent: '6100',
   equipmentRigging: '6200',
+  floorInstallation: '6300',
+  floorRemoval: '6310',
+  inventoryLosses: '5900',
+  inventoryScrapped: '5910',
 } as const satisfies Record<string, AccountCode>;
 
 /**
@@ -80,6 +85,38 @@ export const EQUIPMENT_ACCOUNTS = {
   rigging: {
     code: ACCOUNT.equipmentRigging,
     name: 'Equipment installation and relocation',
+    type: 'expense',
+  },
+} as const satisfies Record<string, Account>;
+
+/**
+ * Floor-covering works (Step 09A, ADR-0052), opened the same way. The owner
+ * chose to expense all of it: laying a covering and taking one up are
+ * separate expense accounts, so a replacement is distinguishable from an
+ * initial installation in the books.
+ */
+export const FLOOR_ACCOUNTS = {
+  installation: {
+    code: ACCOUNT.floorInstallation,
+    name: 'Floor covering installation',
+    type: 'expense',
+  },
+  removal: { code: ACCOUNT.floorRemoval, name: 'Floor covering removal', type: 'expense' },
+} as const satisfies Record<string, Account>;
+
+/**
+ * Stock (Step 10, ADR-0053), opened the same way. Goods received are an
+ * asset at what they cost; scrapping writes their cost down to nothing, and
+ * a loss writes off what left the world, each on its own expense account.
+ * The balance of Inventory always equals the cost of the lots the company
+ * holds (an invariant).
+ */
+export const INVENTORY_ACCOUNTS = {
+  inventory: { code: ACCOUNT.inventory, name: 'Inventory', type: 'asset' },
+  losses: { code: ACCOUNT.inventoryLosses, name: 'Inventory losses', type: 'expense' },
+  scrapped: {
+    code: ACCOUNT.inventoryScrapped,
+    name: 'Inventory written down to scrap',
     type: 'expense',
   },
 } as const satisfies Record<string, Account>;

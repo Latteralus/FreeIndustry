@@ -3,6 +3,7 @@ import { IPC_PROTOCOL_VERSION } from './channels';
 import { ADVANCE_STOPS, ADVANCE_TARGETS, clockControlSchema, SIMULATION_SPEEDS } from './clock';
 import { companyViewSchema } from './company';
 import { facilitiesViewSchema, simulationQuerySchema } from './facilities';
+import { stockViewSchema } from './stock';
 import { calendarSchema, simTimeString } from './primitives';
 import { newWorldRequestSchema, realEstateViewSchema, scenarioSummarySchema } from './real-estate';
 import { saveIdSchema, saveRequestSchema, workspaceUpdateSchema } from './saves';
@@ -234,6 +235,8 @@ export const worldSnapshotSchema = z.strictObject({
   realEstate: realEstateViewSchema.nullable(),
   /** Building layouts, equipment and floor coverings; null in worlds created before Step 08 (ADR-0048). */
   facilities: facilitiesViewSchema.nullable(),
+  /** Products, containers, load units, lots and the stock-take; null in worlds created before Step 10 (ADR-0055). */
+  stock: stockViewSchema.nullable(),
   /** The scenarios a new world can be started from (this build's content). */
   scenarios: z.array(scenarioSummarySchema).max(50),
   /** Kernel diagnostics (development only, ADR-0016/ADR-0024). */

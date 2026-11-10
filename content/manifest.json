@@ -1,9 +1,11 @@
 {
   "id": "freeindustry-base",
-  "version": 2,
-  "description": "FreeIndustry's own base content: three fictional cities with their industrial districts, properties, building structure and established businesses; floor materials; an equipment catalog; and the starting scenarios. Independently authored; no data from the original game.",
+  "version": 3,
+  "description": "FreeIndustry's own base content: three fictional cities with their industrial districts, properties, building structure and established businesses; floor materials; an equipment catalog; products and containers; and the starting scenarios. Independently authored; no data from the original game.",
   "realEstate": ["harlow-falls.json", "port-calder.json", "cedar-bluff.json"],
   "scenarios": "scenarios.json",
   "floorMaterials": "floor-materials.json",
-  "equipment": "equipment.json"
+  "equipment": "equipment.json",
+  "products": "products.json",
+  "containers": "containers.json"
 }

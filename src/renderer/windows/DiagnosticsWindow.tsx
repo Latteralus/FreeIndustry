@@ -8,12 +8,14 @@ import { withTab, type WindowViewProps } from '../app/desktop/window-catalog';
 import { parseDollarsToCents } from '../app/money-input';
 import type { SimulationHostView } from '../app/useSimulationHost';
 import { WORKER_STATE_LABEL } from '../app/worker-format';
+import { TestDeliveryTab } from './TestDeliveryTab';
 
 /**
  * Simulation Diagnostics (Help → Simulation Diagnostics). Development
  * instruments, clearly labelled as such (ADR-0016, ADR-0024, ADR-0032): the
  * world's identity and fingerprints, the kernel's probe commands, and the
- * test obligation that exercises bills before leases exist. None of it is a
+ * test obligation that exercises bills before leases exist, and (Step 10) the
+ * test delivery that brings stock before purchasing exists. None of it is a
  * game feature.
  */
 
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'world', label: 'World' },
   { id: 'probes', label: 'Probes' },
   { id: 'obligations', label: 'Test obligations' },
+  { id: 'stock', label: 'Test delivery' },
 ] as const;
 
 export interface DiagnosticsWindowProps extends WindowViewProps {
@@ -54,6 +57,7 @@ export function DiagnosticsWindow({
         {tab === 'world' && <WorldTab worker={worker} world={world} />}
         {tab === 'probes' && <ProbesTab world={world} host={host} outcome={outcome} />}
         {tab === 'obligations' && <TestObligationTab world={world} host={host} outcome={outcome} />}
+        {tab === 'stock' && <TestDeliveryTab world={world} host={host} />}
       </Tabs>
     </div>
   );

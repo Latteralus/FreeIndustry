@@ -1,0 +1,102 @@
+{
+  "containers": [
+    {
+      "id": "gma-pallet",
+      "name": "Wooden pallet, 48 × 40 in",
+      "kind": "pallet",
+      "description": "Four-way stringer pallet of hardwood boards, 1,219 × 1,016 mm. Loads up to 1,350 mm high above the deck.",
+      "outerMm": [1219, 1016, 140],
+      "innerMm": [1219, 1016, 1350],
+      "tareMassG": 21000,
+      "payloadMassG": 1000000,
+      "holds": ["item"],
+      "carries": ["carton", "crate", "tote", "drum", "bulk-bag"],
+      "mixing": "mixed",
+      "colour": "#a4835a"
+    },
+    {
+      "id": "lumber-bunk-8ft",
+      "name": "Timber bunk, 8 × 4 ft",
+      "kind": "pallet",
+      "description": "Three timber bearers under an 8 × 4 ft deck (2,440 × 1,220 mm) for long lengths and full sheets. Loads up to 1,000 mm high.",
+      "outerMm": [2440, 1220, 100],
+      "innerMm": [2440, 1220, 1000],
+      "tareMassG": 30000,
+      "payloadMassG": 2000000,
+      "holds": ["item"],
+      "carries": [],
+      "mixing": "single-product",
+      "colour": "#9a7a4e"
+    },
+    {
+      "id": "carton-24x16x16",
+      "name": "Corrugated carton, 24 × 16 × 16 in",
+      "kind": "carton",
+      "description": "Double-wall corrugated board carton, 610 × 406 × 406 mm, rated for 30 kg. One product per carton.",
+      "outerMm": [610, 406, 406],
+      "innerMm": [600, 396, 396],
+      "tareMassG": 900,
+      "payloadMassG": 30000,
+      "holds": ["item"],
+      "carries": [],
+      "mixing": "single-product",
+      "colour": "#b48a5a"
+    },
+    {
+      "id": "wooden-crate-48x32",
+      "name": "Wooden crate, 48 × 32 × 24 in",
+      "kind": "crate",
+      "description": "Nailed board crate, 1,219 × 813 × 610 mm outside, for machine parts and heavy items; may hold cartons.",
+      "outerMm": [1219, 813, 610],
+      "innerMm": [1170, 765, 560],
+      "tareMassG": 32000,
+      "payloadMassG": 600000,
+      "holds": ["item"],
+      "carries": ["carton"],
+      "mixing": "mixed",
+      "colour": "#8a6a40"
+    },
+    {
+      "id": "stacking-tote-24x16",
+      "name": "Plastic stacking tote, 24 × 16 × 12 in",
+      "kind": "tote",
+      "description": "Polypropylene tote with ribbed walls, 610 × 406 × 305 mm, for small parts.",
+      "outerMm": [610, 406, 305],
+      "innerMm": [570, 370, 285],
+      "tareMassG": 2300,
+      "payloadMassG": 35000,
+      "holds": ["item"],
+      "carries": [],
+      "mixing": "mixed",
+      "colour": "#3c5e8a"
+    },
+    {
+      "id": "steel-drum-55gal",
+      "name": "Steel drum, 55 US gal (208 L)",
+      "kind": "drum",
+      "description": "Closed-head steel drum, 584 mm across and 876 mm tall, with two bungs. Holds one lot of a liquid or a pourable solid.",
+      "outerMm": [584, 584, 876],
+      "innerMm": [560, 560, 664],
+      "tareMassG": 22000,
+      "payloadMassG": 320000,
+      "holds": ["liquid", "bulk"],
+      "carries": [],
+      "mixing": "single-lot",
+      "colour": "#2f5b8c"
+    },
+    {
+      "id": "bulk-bag-1t",
+      "name": "Bulk bag (FIBC), 1 tonne",
+      "kind": "bulk-bag",
+      "description": "Woven polypropylene bag with four lifting loops, 1,016 × 1,016 mm, filled up to 1,700 mm. Holds one lot of a pourable solid.",
+      "outerMm": [1016, 1016, 1750],
+      "innerMm": [1000, 1000, 1700],
+      "tareMassG": 2700,
+      "payloadMassG": 1000000,
+      "holds": ["bulk"],
+      "carries": [],
+      "mixing": "single-lot",
+      "colour": "#e6e3d4"
+    }
+  ]
+}

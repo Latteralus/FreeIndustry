@@ -28,3 +28,8 @@ console.log(
     `${buildings.reduce((sum, building) => sum + building.levels.reduce((n, level) => n + level.features.length, 0), 0)} structural features), ` +
     `${floorMaterials.length} floor materials, ${equipmentTypes.length} equipment types`,
 );
+const { products, containerTypes } = catalog.stock;
+console.log(
+  `  ${products.length} products (${products.filter((product) => product.tracking === 'serialized').length} serialized), ` +
+    `${containerTypes.length} container types`,
+);

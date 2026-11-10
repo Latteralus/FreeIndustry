@@ -48,6 +48,32 @@ const placementFields = {
   rotation: z.int().min(0).max(359),
 };
 
+/** Most rectangles one floor order may carry (the domain's own limit, ADR-0052). */
+export const MAX_FLOOR_ORDER_RECTANGLES = 2000;
+/** Most floor orders a company may place (the domain's own limit; revisit with Step 33). */
+export const MAX_FLOOR_ORDERS = 10_000;
+
+/** A rectangle of construction-grid cells: `cols` × `rows` cells from (`col`, `row`). */
+export const cellRectSchema = z.strictObject({
+  col: z.int().min(0).max(4095),
+  row: z.int().min(0).max(4095),
+  cols: z.int().min(1).max(4096),
+  rows: z.int().min(1).max(4096),
+});
+
+/**
+ * An exact quantity of stock (Step 10, ADR-0053): millionths of the
+ * product's base unit as a canonical decimal string, at most 10¹⁵ (10⁹ base
+ * units). The worker refuses a quantity that is not a whole number of the
+ * product's quanta.
+ */
+const quantityMicroString = z
+  .string()
+  .regex(/^[1-9][0-9]{0,15}$/, 'Expected a positive quantity in millionths of a unit');
+
+/** Why stock is classified as scrap (the domain's own list, ADR-0054). */
+export const SCRAP_REASONS = ['damaged', 'defective', 'contaminated', 'obsolete'] as const;
+
 /** Longest delay before a diagnostic test obligation's first bill: one year. */
 export const MAX_TEST_OBLIGATION_START_DAYS = 366;
 
@@ -127,6 +153,39 @@ export const COMMANDS = {
     permission: 'renderer',
     payload: z.strictObject({ equipmentId: equipmentIdSchema }),
   },
+  /**
+   * Order a floor covering for cells of the company's premises from the
+   * floor contractor: paid now, laid when the contractor finishes (Step 09A,
+   * ADR-0046, ADR-0052). Cells are rectangles in cell coordinates; the
+   * worker refuses cells outside the usable floor with the reason.
+   */
+  'facility.installFloorCovering': {
+    permission: 'renderer',
+    payload: z.strictObject({
+      propertyId: contentIdSchema,
+      level: z.int().min(0).max(9),
+      materialId: contentIdSchema,
+      rectangles: z.array(cellRectSchema).min(1).max(MAX_FLOOR_ORDER_RECTANGLES),
+    }),
+  },
+  /**
+   * Classify a quantity of a lot as scrap where it stands: it stays
+   * physically present, its cost is written down to nothing, and it can no
+   * longer be used (Step 10, ADR-0054). Serials may name which items of a
+   * serialized lot; by default the lowest-numbered.
+   */
+  'stock.scrap': {
+    permission: 'renderer',
+    payload: z.strictObject({
+      lotId: z.string().regex(/^lot:[1-9][0-9]{0,15}$/, 'Expected a lot ID'),
+      quantityMicro: quantityMicroString,
+      serials: z
+        .array(z.string().regex(/^serial:[1-9][0-9]{0,15}$/))
+        .max(10_000)
+        .nullable(),
+      reason: z.enum(SCRAP_REASONS),
+    }),
+  },
   /** Pay (part of) a bill the company owes, from its bank account. */
   'finance.payInvoice': {
     permission: 'renderer',
@@ -150,6 +209,27 @@ export const COMMANDS = {
       firstBillInDays: z.int().min(0).max(MAX_TEST_OBLIGATION_START_DAYS),
       paymentTermsDays: z.int().min(0).max(90),
       standingOrder: z.boolean(),
+    }),
+  },
+  /**
+   * Development-only: a fictional "Diagnostic supplier" delivers paid-for
+   * goods onto the landings inside the company's goods doors, so stock can
+   * be seen, inspected and classified before purchasing exists (Step 10,
+   * ADR-0055; replaced by real purchasing and receiving in Step 14). The
+   * cost is invoiced to Inventory and paid at once; every capacity and floor
+   * rule applies.
+   */
+  'diagnostics.deliverTestStock': {
+    permission: 'renderer',
+    payload: z.strictObject({
+      productId: contentIdSchema,
+      grade: contentIdSchema.nullable(),
+      containerTypeId: contentIdSchema,
+      containers: z.int().min(1).max(100),
+      quantityPerContainerMicro: quantityMicroString,
+      palletTypeId: contentIdSchema.nullable(),
+      containersPerPallet: z.int().min(1).max(100).nullable(),
+      totalCostCents: positiveCentsString,
     }),
   },
   /** Development-only probe that records a label, proving the round trip changes worker state. */

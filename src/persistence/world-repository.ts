@@ -14,6 +14,7 @@ import {
 } from './database';
 import { COMPANY_TABLES, readCompany, writeCompany } from './company-repository';
 import { FACILITIES_TABLES, readFacilities, writeFacilities } from './facilities-repository';
+import { readStock, STOCK_TABLES, writeStock } from './stock-repository';
 import { readRealEstate, REAL_ESTATE_TABLES, writeRealEstate } from './real-estate-repository';
 import type { AuditDetails, AuditEntry, KernelImage, SaveImage, SaveLabel } from './save-image';
 
@@ -28,6 +29,7 @@ import type { AuditDetails, AuditEntry, KernelImage, SaveImage, SaveLabel } from
  */
 
 const STATE_TABLES = [
+  ...STOCK_TABLES,
   ...FACILITIES_TABLES,
   ...REAL_ESTATE_TABLES,
   ...COMPANY_TABLES,
@@ -125,6 +127,7 @@ function writeState(db: SqliteDatabase, image: SaveImage, label: SaveLabel): voi
   writeCompany(db, image.domain.company);
   writeRealEstate(db, image.domain.realEstate);
   writeFacilities(db, image.domain.facilities);
+  writeStock(db, image.domain.stock);
   const setting = db.prepare('INSERT INTO workspace_settings (key, value_json) VALUES (?, ?)');
   for (const [key, value] of Object.entries(image.workspace)) {
     setting.run(key, canonicalJson(value));
@@ -342,6 +345,7 @@ function readWorldRows(db: SqliteDatabase): { image: SaveImage; label: SaveLabel
         company: readCompany(db),
         realEstate: readRealEstate(db),
         facilities: readFacilities(db),
+        stock: readStock(db),
       },
       journal: readJournal(db),
       fingerprint: {

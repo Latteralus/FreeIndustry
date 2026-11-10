@@ -1163,3 +1163,60 @@ select:disabled {
   margin: 4px 0;
   background: #e6e2d6;
 }
+
+/* ----------------------------------------------- floor materials (09A) */
+
+.floor-sample {
+  display: block;
+  border: 1px solid var(--shadow);
+}
+
+.floor-sample-joint {
+  stroke: rgb(0 0 0 / 35%);
+  stroke-width: 1;
+}
+
+.floor-material-description {
+  color: var(--dark);
+  font-size: 0.92em;
+}
+
+.floor-materials-window p {
+  margin: 4px 0 6px;
+}
+
+/* Stock window (Step 10): tables over the selected load unit's record. */
+.stock-window {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stock-window p {
+  margin: 4px 0 6px;
+}
+
+.stock-record {
+  border-top: 1px solid var(--shadow);
+  padding-top: 6px;
+}
+
+.stock-record h3,
+.stock-record h4 {
+  margin: 6px 0 4px;
+}
+
+.stock-record-children {
+  margin: 0 0 4px;
+  padding-left: 18px;
+}
+
+.stock-serials,
+.stock-record-hint {
+  color: var(--dark);
+  font-size: 0.92em;
+}
+
+.stock-scrap-form {
+  margin: 6px 0;
+}

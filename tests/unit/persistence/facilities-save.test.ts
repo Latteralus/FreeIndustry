@@ -10,6 +10,7 @@ import {
   leasedWorld,
   placement,
   withCoverings,
+  worksFinishAt,
   type World,
 } from '../../support/facility-world';
 import {
@@ -177,6 +178,121 @@ describe('facilities in a save', () => {
     expect(checkIntegrity(other, SAVE_MIGRATIONS, LATEST)).toEqual([]);
     expect(() => restoreImage(readWorld(other).image)).toThrow(/overlaps/);
     other.close();
+  });
+
+  it('stores floor orders with their cells and charges, laid or under way, and continues them identically (format 5)', () => {
+    const db = saveDatabase();
+    const world = leasedWorld('hf-canal-2');
+    accept(world, 'facility.installFloorCovering', {
+      propertyId: 'hf-canal-2',
+      level: 0,
+      materialId: 'epoxy-grey',
+      rectangles: [{ col: 0, row: 10, cols: 6, rows: 2 }],
+    });
+    world.advanceTo(worksFinishAt(world));
+    // A replacement still under way when the game is saved.
+    accept(world, 'facility.installFloorCovering', {
+      propertyId: 'hf-canal-2',
+      level: 0,
+      materialId: 'steel-plate',
+      rectangles: [{ col: 4, row: 9, cols: 2, rows: 3 }],
+    });
+    const image = imageOf(world);
+    writeWorld(db, image, label('Floor works'));
+    expect(checkIntegrity(db, SAVE_MIGRATIONS, LATEST)).toEqual([]);
+    expect(readWorld(db).image).toEqual(image);
+    expect(
+      rows(
+        db,
+        `SELECT id, material_id, status, kind, cells, area_mm2, replaced_cells, install_cents,
+           removal_cents, cost_cents FROM floor_covering_installations ORDER BY ordinal`,
+      ),
+    ).toEqual([
+      {
+        id: 'floor-installation:1',
+        material_id: 'epoxy-grey',
+        status: 'complete',
+        kind: 'installation',
+        cells: 12n,
+        area_mm2: 2_400_000n, // six full cells and six partial cells of 150,000 mm²
+        replaced_cells: 0n,
+        install_cents: 13_200n,
+        removal_cents: 0n,
+        cost_cents: 13_200n,
+      },
+      {
+        id: 'floor-installation:2',
+        material_id: 'steel-plate',
+        status: 'scheduled',
+        kind: 'mixed',
+        cells: 6n,
+        area_mm2: 1_300_000n,
+        replaced_cells: 4n,
+        install_cents: 23_400n,
+        removal_cents: 1_280n,
+        cost_cents: 24_680n,
+      },
+    ]);
+    expect(
+      rows(
+        db,
+        "SELECT row, first_col, end_col FROM floor_covering_installation_runs WHERE installation_id = 'floor-installation:2' ORDER BY position",
+      ),
+    ).toEqual([
+      { row: 9n, first_col: 4n, end_col: 6n },
+      { row: 10n, first_col: 4n, end_col: 6n },
+      { row: 11n, first_col: 4n, end_col: 6n },
+    ]);
+    const restored = restoreImage(readWorld(db).image);
+    expect(restored.fingerprint()).toEqual(world.fingerprint());
+    // The pending completion was saved in the event queue: both finish the job identically.
+    const later = world.nowMs + 5n * MS_PER_DAY;
+    world.advanceTo(later);
+    restored.advanceTo(later);
+    expect(restored.fingerprint()).toEqual(world.fingerprint());
+    expect(restored.state.facilities?.installations.map((job) => job.status)).toEqual([
+      'complete',
+      'complete',
+    ]);
+    db.close();
+  });
+
+  it('refuses a save whose floor order disagrees with its entry, or names cells it does not change', () => {
+    const db = saveDatabase();
+    writeWorld(db, imageOf(laidOutWorld()), label());
+    db.prepare(
+      "UPDATE floor_covering_installations SET install_cents = install_cents + 1, cost_cents = cost_cents + 1 WHERE id = 'floor-installation:1'",
+    ).run();
+    expect(checkIntegrity(db, SAVE_MIGRATIONS, LATEST)).toContain(
+      '1 floor installations differ from their journal entries',
+    );
+    db.close();
+    const other = saveDatabase();
+    writeWorld(other, imageOf(laidOutWorld()), label());
+    other
+      .prepare(
+        "UPDATE floor_covering_installation_runs SET end_col = end_col + 1 WHERE installation_id = 'floor-installation:1'",
+      )
+      .run();
+    expect(() => restoreImage(readWorld(other).image)).toThrow(/cell count or area|did not lay it/);
+    other.close();
+  });
+
+  it('migration 5 refuses a format 4 save that somehow holds floor coverings', () => {
+    const db = new Database(':memory:');
+    db.defaultSafeIntegers(true);
+    const context = { appVersion: '0.1.0', appliedAt: '2026-11-08T00:00:00Z' };
+    applyMigrations(db, SAVE_MIGRATIONS.slice(0, 4), context);
+    db.pragma('foreign_keys = OFF');
+    db.prepare(
+      `INSERT INTO floor_covering_installations (ordinal, id, property_id, firm_id, game_time_ms, kind,
+         cells, area_mm2, cost_cents, journal_entry_id)
+       VALUES (1, 'floor-installation:1', 'hf-canal-2', 'firm:1', 0, 'installation', 1, 1, 1, 'entry:1')`,
+    ).run();
+    expect(() => applyMigrations(db, SAVE_MIGRATIONS, context)).toThrow(
+      /no build before Step 09A could create/,
+    );
+    db.close();
   });
 
   it('survives a save store write and read with identical fingerprints', () => {

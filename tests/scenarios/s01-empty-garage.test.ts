@@ -189,10 +189,16 @@ describe('S01: an empty garage', () => {
       'diagnostics',
       'facilities',
       'realEstate',
+      'stock',
     ]);
     // The building's structure and the catalogs exist; the company owns nothing in it.
     expect(state.facilities?.equipment).toEqual([]);
     expect(state.facilities?.coverings).toEqual([]);
+    // The product and container catalogs exist (Step 10); there is no stock at all.
+    expect(state.stock?.products.length).toBeGreaterThan(0);
+    expect(state.stock?.loadUnits).toEqual([]);
+    expect(state.stock?.lots).toEqual([]);
+    expect(state.stock?.receipts).toEqual([]);
     expect(
       state.company?.ledger.accounts
         .filter((account) => account.balanceCents !== 0n)
